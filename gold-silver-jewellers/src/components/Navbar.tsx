@@ -4,6 +4,7 @@ import { Menu, X, ShoppingBag, Search, Info, Phone, Compass, Sparkles, History }
 import { Link, useLocation } from 'react-router-dom';
 // import { cn } from '@/src/lib/utils';
 import { useCart } from '../context/CartContext'; // Context import karein
+import { cn } from '../lib/utils';
 
 interface NavLink {
   name: string;
