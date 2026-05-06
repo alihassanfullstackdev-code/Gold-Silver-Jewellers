@@ -16,7 +16,7 @@ export default function ProductSection({ title, subtitle, filterType }: Props) {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const res = await axios.get('http://127.0.0.1:8000/api/products');
+        const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/api/products`);
         const filtered = res.data.data.filter((p: any) => p[filterType] === 1 || p[filterType] === true);
         setProducts(filtered);
       } catch (err) {
