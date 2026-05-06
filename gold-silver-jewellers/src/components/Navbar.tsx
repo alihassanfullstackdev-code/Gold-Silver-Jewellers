@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Menu, X, ShoppingBag, Search, Info, Phone, Compass, Sparkles, History } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
-import { cn } from '@/src/lib/utils';
+// import { cn } from '@/src/lib/utils';
 import { useCart } from '../context/CartContext'; // Context import karein
 
 interface NavLink {
