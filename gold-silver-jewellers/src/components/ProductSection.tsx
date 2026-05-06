@@ -79,7 +79,7 @@ export default function ProductSection({ title, subtitle, filterType }: Props) {
             <div key={`${product.id}-${idx}`} className="group w-[280px] md:w-[350px] flex-shrink-0">
               <div className="relative aspect-[4/5] overflow-hidden bg-[#080808] border border-white/10 group-hover:border-gold/40 transition-all duration-700 shadow-2xl">
                 <img 
-                  src={`http://127.0.0.1:8000/storage/${product.image}`} 
+                  src={`${import.meta.env.VITE_API_BASE_URL}/storage/${product.image}`} 
                   className="h-full w-full object-cover group-hover:scale-110 transition-transform duration-1000 opacity-90" 
                   alt={product.name}
                 />
