@@ -13,28 +13,32 @@ export default function ProductSection({ title, subtitle, filterType }: Props) {
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // API Base URL handle karne ke liye
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000';
+
   useEffect(() => {
-  const fetchData = async () => {
-    try {
-      const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/api/products`);
-      
-      // Safe check karein ke data mojood hai ya nahi
-      const productsArray = res.data?.data || []; 
-      
-      const filtered = productsArray.filter((p: any) => 
-        p[filterType] === 1 || p[filterType] === true
-      );
-      
-      setProducts(filtered);
-        } catch (err) {
-          console.error(`${title} fetch failed`, err);
-          setProducts([]); // Error ki surat mein array ko khali rakhein
-        } finally {
-          setLoading(false);
-        }
-      };
-      fetchData();
-    }, [filterType, title]);
+    const fetchData = async () => {
+      try {
+        const res = await axios.get(`${API_BASE_URL}/api/products`);
+        
+        // Railway response format ke mutabiq products nikalna
+        const productsArray = res.data?.data || []; 
+        
+        // Filter logic: Check karein ke column 1 hai ya true
+        const filtered = productsArray.filter((p: any) => 
+          p[filterType] === 1 || p[filterType] === true || p[filterType] === "1"
+        );
+        
+        setProducts(filtered);
+      } catch (err) {
+        console.error(`${title} fetch failed:`, err);
+        setProducts([]); 
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, [filterType, title, API_BASE_URL]);
 
   if (loading) return (
     <div className="h-[400px] flex items-center justify-center bg-[#030303]">
@@ -42,12 +46,13 @@ export default function ProductSection({ title, subtitle, filterType }: Props) {
     </div>
   );
 
-  if (products.length === 0) return null;
+  // Agar database khali ho toh error ke bajaye section hide ho jaye
+  if (!products || products.length === 0) return null;
 
   // Infinite effect ke liye array ko duplicate karein
   const infiniteProducts = [...products, ...products];
   
-  // Aik single set ki width (350 card + 40 gap)
+  // Carousel width calculation
   const singleSetWidth = products.length * 390;
 
   return (
@@ -69,15 +74,13 @@ export default function ProductSection({ title, subtitle, filterType }: Props) {
         <motion.div
           className="flex gap-10"
           animate={{
-            // Reset hone se pehle sirf aik set ki width tak move karein
             x: [0, -singleSetWidth],
           }}
           transition={{
             x: {
               repeat: Infinity,
-              // Speed adjustment: Products ki tadaad ke mutabiq
-              duration: products.length * 3, 
-              ease: "linear", // Infinite ke liye linear hona zaroori hai
+              duration: products.length * 4, // Speed adjustment
+              ease: "linear",
               repeatType: "loop"
             },
           }}
@@ -87,9 +90,11 @@ export default function ProductSection({ title, subtitle, filterType }: Props) {
             <div key={`${product.id}-${idx}`} className="group w-[280px] md:w-[350px] flex-shrink-0">
               <div className="relative aspect-[4/5] overflow-hidden bg-[#080808] border border-white/10 group-hover:border-gold/40 transition-all duration-700 shadow-2xl">
                 <img 
-                  src={`${import.meta.env.VITE_API_BASE_URL}/storage/${product.image}`} 
+                  // Image path handle karne ke liye logic
+                  src={product.image?.startsWith('http') ? product.image : `${API_BASE_URL}/storage/${product.image}`} 
                   className="h-full w-full object-cover group-hover:scale-110 transition-transform duration-1000 opacity-90" 
                   alt={product.name}
+                  onError={(e: any) => { e.target.src = 'https://placehold.co/400x500?text=No+Image'; }}
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-80" />
                 <div className="absolute right-5 top-5 flex flex-col space-y-4 translate-x-12 opacity-0 group-hover:translate-x-0 group-hover:opacity-100 transition-all">
@@ -100,7 +105,6 @@ export default function ProductSection({ title, subtitle, filterType }: Props) {
               </div>
               <div className="mt-8 text-center px-4">
                 <h3 className="font-serif text-2xl text-white group-hover:text-gold transition-colors truncate">{product.name}</h3>
-                {/* <p className="text-white/50 tracking-widest text-sm mt-2">PKR {Number(product.fixed_price).toLocaleString()}</p> */}
               </div>
             </div>
           ))}
