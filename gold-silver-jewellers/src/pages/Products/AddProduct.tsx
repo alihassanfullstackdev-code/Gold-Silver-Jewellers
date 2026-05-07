@@ -23,7 +23,7 @@ export default function ProductModal({ isOpen, onClose, onSuccess, product }: Pr
     useEffect(() => {
         if (isOpen) {
             // UPDATED: Added ?all=true to fetch all 11 categories bypassing pagination
-            axios.get('http://127.0.0.1:8000/api/categories?all=true').then(res => {
+            axios.get('import.meta.env.VITE_API_BASE_URL/categories?all=true').then(res => {
                 // Laravel .get() returns array, .paginate() returns object with .data
                 const fetchedData = Array.isArray(res.data) ? res.data : res.data.data;
                 setCategories(fetchedData || []);
@@ -46,7 +46,7 @@ export default function ProductModal({ isOpen, onClose, onSuccess, product }: Pr
                     in_stock: Boolean(product.in_stock),
                 });
                 // Image URL fix for preview
-                setImagePreview(`http://127.0.0.1:8000/storage/${product.image}`);
+                setImagePreview(`himport.meta.env.VITE_API_BASE_URL/storage/${product.image}`);
             } else {
                 resetForm();
             }
@@ -74,8 +74,8 @@ export default function ProductModal({ isOpen, onClose, onSuccess, product }: Pr
 
         try {
             const url = isEdit 
-                ? `http://127.0.0.1:8000/api/products/${product.id}` 
-                : `http://127.0.0.1:8000/api/products`;
+                ? `import.meta.env.VITE_API_BASE_URL/products/${product.id}` 
+                : `import.meta.env.VITE_API_BASE_URL/products`;
             
             await axios.post(url, data); 
             onSuccess();

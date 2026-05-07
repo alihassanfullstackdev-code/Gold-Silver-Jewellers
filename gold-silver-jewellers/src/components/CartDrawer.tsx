@@ -50,7 +50,7 @@ export default function CartDrawer({ isOpen, onClose }: { isOpen: boolean, onClo
                 cartItems.map((item: { id: Key | null | undefined; image: any; name: string | number | bigint | boolean | ReactElement<unknown, string | JSXElementConstructor<any>> | Iterable<ReactNode> | ReactPortal | Promise<string | number | bigint | boolean | ReactPortal | ReactElement<unknown, string | JSXElementConstructor<any>> | Iterable<ReactNode> | null | undefined> | null | undefined; fixed_price: any; quantity: string | number | bigint | boolean | ReactElement<unknown, string | JSXElementConstructor<any>> | Iterable<ReactNode> | ReactPortal | Promise<string | number | bigint | boolean | ReactPortal | ReactElement<unknown, string | JSXElementConstructor<any>> | Iterable<ReactNode> | null | undefined> | null | undefined; }) => (
                   <div key={item.id} className="flex gap-6 group relative">
                     <div className="w-24 h-28 bg-white/5 border border-white/10 overflow-hidden shrink-0">
-                      <img src={`http://127.0.0.1:8000/storage/${item.image}`} className="w-full h-full object-cover" />
+                      <img src={`${import.meta.env.VITE_API_BASE_URL}/storage/${item.image}`} className="w-full h-full object-cover" />
                     </div>
                     <div className="flex-1 flex flex-col justify-between">
                       <div>

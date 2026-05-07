@@ -10,7 +10,7 @@ export default function FeaturedProducts() {
   useEffect(() => {
     const getArrivals = async () => {
       try {
-        const res = await axios.get('http://127.0.0.1:8000/api/products');
+        const res = await axios.get('import.meta.env.VITE_API_BASE_URL/products');
         const arrivals = res.data.data.filter((p: any) => p.is_new_arrival === 1 || p.is_new_arrival === true);
         setProducts(arrivals);
       } catch (err) {
@@ -88,7 +88,7 @@ export default function FeaturedProducts() {
             >
               <div className="relative aspect-[4/5] overflow-hidden bg-[#080808] border border-white/10 transition-all duration-700 group-hover:border-gold/40 shadow-2xl">
                 <img
-                  src={`http://127.0.0.1:8000/storage/${product.image}`}
+                  src={`import.meta.env.VITE_API_BASE_URL/storage/${product.image}`}
                   alt={product.name}
                   className="h-full w-full object-cover transition-transform duration-1000 group-hover:scale-110 opacity-90"
                 />

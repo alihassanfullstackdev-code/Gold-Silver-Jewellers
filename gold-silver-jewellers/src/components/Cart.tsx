@@ -53,7 +53,7 @@ export default function Cart() {
                     className="flex gap-6 border-b border-white/5 pb-8 group"
                   >
                     <div className="w-24 h-32 md:w-32 md:h-40 bg-[#080808] border border-white/10 overflow-hidden">
-                      <img src={`http://127.0.0.1:8000/storage/${item.image}`} className="w-full h-full object-cover" />
+                      <img src={`${import.meta.env.VITE_API_BASE_URL}/storage/${item.image}`} className="w-full h-full object-cover" />
                     </div>
                     
                     <div className="flex-1 flex flex-col justify-between py-1">

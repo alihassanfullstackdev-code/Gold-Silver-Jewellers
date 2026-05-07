@@ -14,7 +14,7 @@ export default function ProductSection({ title, subtitle, filterType }: Props) {
   const [loading, setLoading] = useState(true);
 
   // API Base URL handle karne ke liye
-  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000';
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ;
 
   useEffect(() => {
     const fetchData = async () => {
