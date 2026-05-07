@@ -1,0 +1,5 @@
+[phases.setup]
+nixPkgs = ["...", "php82Extensions.intl"]
+
+[phases.build]
+cmds = ["composer install --optimize-autoloader --no-interaction --no-dev"]
