@@ -14,7 +14,7 @@ export default function OurCollection() {
   const { addToCart } = useCart();
 
   useEffect(() => {
-    axios.get('http://127.0.0.1:8000/api/products?all=true')
+    axios.get('import.meta.env.VITE_API_BASE_URL/products?all=true')
       .then(res => {
         const data = Array.isArray(res.data) ? res.data : res.data.data;
         setProducts(data.slice(0, 8));
@@ -76,7 +76,7 @@ export default function OurCollection() {
               {/* Image Container */}
               <div className="relative aspect-[3/4] overflow-hidden bg-[#080808] border border-white/10 group-hover:border-gold/30 transition-all duration-700">
                 <img
-                  src={`http://127.0.0.1:8000/storage/${product.image}`}
+                  src={`${import.meta.env.VITE_API_BASE_URL}/storage/${product.image}`}
                   className="w-full h-full object-cover opacity-80 group-hover:opacity-100 group-hover:scale-110 transition-all duration-1000 ease-out"
                   alt={product.name}
                 />

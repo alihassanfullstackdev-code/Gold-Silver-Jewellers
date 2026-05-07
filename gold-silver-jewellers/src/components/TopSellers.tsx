@@ -12,7 +12,7 @@ export default function TopSellers() {
   const { addToCart } = useCart();
 
   useEffect(() => {
-    axios.get('http://127.0.0.1:8000/api/products?all=true')
+    axios.get('import.meta.env.VITE_API_BASE_URL/products?all=true')
       .then(res => {
         const data = Array.isArray(res.data) ? res.data : res.data.data;
         const filtered = data.filter((p: any) => p.is_top_seller === 1 || p.is_top_seller === true);
