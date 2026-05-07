@@ -4,29 +4,23 @@ use Illuminate\Http\Request;
 
 define('LARAVEL_START', microtime(true));
 
-// Vercel storage fix
-$paths = [
-    '/tmp/storage/framework/views',
-    '/tmp/storage/framework/cache',
-    '/tmp/storage/framework/sessions',
-];
+// Vercel storage setup
+$storagePath = '/tmp/storage/framework/';
+$folders = ['views', 'cache', 'sessions'];
 
-foreach ($paths as $path) {
-    if (!is_dir($path)) {
-        @mkdir($path, 0755, true);
+foreach ($folders as $folder) {
+    if (!is_dir($storagePath . $folder)) {
+        @mkdir($storagePath . $folder, 0755, true);
     }
 }
 
-// Composer autoloader
 require __DIR__ . '/../vendor/autoload.php';
 
-// Bootstrap Laravel
 $app = require_once __DIR__ . '/../bootstrap/app.php';
 
-// Set storage path to /tmp for Vercel
+// Force Laravel to use /tmp for all storage
 $app->useStoragePath('/tmp/storage');
 
-// Handle Request
 $kernel = $app->make(Illuminate\Contracts\Http\Kernel::class);
 $response = $kernel->handle(
     $request = Request::capture()
