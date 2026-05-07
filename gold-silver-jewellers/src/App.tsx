@@ -23,7 +23,7 @@ import Categories from './pages/Categories/Categories';
 import Products from './pages/Products/Products';
 import CartPage from './components/Cart'; 
 
-const API_URL = 'http://127.0.0.1:8000/api';
+const API_URL = 'import.meta.env.VITE_API_BASE_URL';
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const token = localStorage.getItem('admin_token');
