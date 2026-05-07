@@ -1,24 +1,21 @@
 <?php
 
-use Illuminate\Foundation\Application;
 use Illuminate\Http\Request;
 
+// Vercel ke liye temporary storage paths set karna
+mkdir('/tmp/storage/framework/views', 0755, true);
+mkdir('/tmp/storage/framework/cache', 0755, true);
+mkdir('/tmp/storage/framework/sessions', 0755, true);
+
 define('LARAVEL_START', microtime(true));
-/* Vercel ke liye temporary storage rasta */
-putenv('VIEW_COMPILED_PATH=/tmp/storage/framework/views');
-putenv('SESSION_DRIVER=array');
-putenv('LOG_CHANNEL=stderr');
 
-// Determine if the application is in maintenance mode...
-if (file_exists($maintenance = __DIR__.'/../storage/framework/maintenance.php')) {
-    require $maintenance;
-}
+// Composer autoloader load karein
+require __DIR__ . '/../vendor/autoload.php';
 
-// Register the Composer autoloader...
-require __DIR__.'/../vendor/autoload.php';
+// Laravel application bootstrap karein
+$app = require_once __DIR__ . '/../bootstrap/app.php';
 
-// Bootstrap Laravel and handle the request...
-/** @var Application $app */
-$app = require_once __DIR__.'/../bootstrap/app.php';
+// Vercel ke liye custom storage path set karein
+$app->useStoragePath('/tmp/storage');
 
 $app->handleRequest(Request::capture());
