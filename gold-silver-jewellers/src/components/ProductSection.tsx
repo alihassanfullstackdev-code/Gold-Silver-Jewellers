@@ -14,19 +14,27 @@ export default function ProductSection({ title, subtitle, filterType }: Props) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/api/products`);
-        const filtered = res.data.data.filter((p: any) => p[filterType] === 1 || p[filterType] === true);
-        setProducts(filtered);
-      } catch (err) {
-        console.error(`${title} fetch failed`, err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchData();
-  }, [filterType, title]);
+  const fetchData = async () => {
+    try {
+      const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/api/products`);
+      
+      // Safe check karein ke data mojood hai ya nahi
+      const productsArray = res.data?.data || []; 
+      
+      const filtered = productsArray.filter((p: any) => 
+        p[filterType] === 1 || p[filterType] === true
+      );
+      
+      setProducts(filtered);
+        } catch (err) {
+          console.error(`${title} fetch failed`, err);
+          setProducts([]); // Error ki surat mein array ko khali rakhein
+        } finally {
+          setLoading(false);
+        }
+      };
+      fetchData();
+    }, [filterType, title]);
 
   if (loading) return (
     <div className="h-[400px] flex items-center justify-center bg-[#030303]">
