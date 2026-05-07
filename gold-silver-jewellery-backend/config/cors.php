@@ -20,6 +20,7 @@ return [
     'allowed_methods' => ['*'],
 
     'allowed_origins' => [
+        'https://gold-silver-jewellers.vercel.app',
         'https://gold-silver-jewellers-production.up.railway.app',
         'http://localhost:3000',
         // 'http://localhost:5173',
