@@ -19,7 +19,7 @@ export default function Login() {
 
     try {
       // Sahi URL structure with backticks and /api/ prefix
-      const response = await axios.post(`${API_BASE_URL}/api/login`, {
+      const response = await axios.post(`${API_BASE_URL}/login`, {
         email,
         password
       });
