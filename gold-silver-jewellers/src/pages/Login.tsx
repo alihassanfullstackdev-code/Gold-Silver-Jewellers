@@ -13,15 +13,25 @@ export default function Login() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+
+    // API Base URL from environment variables
+    const API_BASE_URL = (import.meta as any).env.VITE_API_BASE_URL;
+
     try {
-      const response = await axios.post('import.meta.env.VITE_API_BASE_URL/login', {
+      // Sahi URL structure with backticks and /api/ prefix
+      const response = await axios.post(`${API_BASE_URL}/api/login`, {
         email,
         password
       });
-      localStorage.setItem('admin_token', response.data.token);
-      navigate('/admin'); 
-    } catch (error) {
-      alert("Unauthorized: Access Denied.");
+
+      // Token save karna aur redirect karna
+      if (response.data.token) {
+        localStorage.setItem('admin_token', response.data.token);
+        navigate('/admin'); 
+      }
+    } catch (error: any) {
+      console.error("Login Error:", error.response?.data || error.message);
+      alert(error.response?.data?.message || "Unauthorized: Access Denied. Please check your credentials.");
     } finally {
       setLoading(false);
     }
@@ -52,9 +62,9 @@ export default function Login() {
         {/* --- LEFT SIDE: THE ARTISAN VIBE --- */}
         <div className="w-full md:w-5/12 relative bg-black overflow-hidden">
           <img 
-            src="/images/about.jpg" // Using your about image for that premium texture
+            src="/images/about.jpg" 
             alt="Jewelry Art" 
-            className="absolute inset-0 w-full h-full object-cover opacity-40 grayscale group-hover:grayscale-0 transition-all duration-1000"
+            className="absolute inset-0 w-full h-full object-cover opacity-40 grayscale transition-all duration-1000"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-[#020617] via-[#020617]/40 to-transparent" />
           
@@ -71,7 +81,7 @@ export default function Login() {
           </div>
         </div>
 
-        {/* --- RIGHT SIDE: CLEAN NEUMORPHIC FORM --- */}
+        {/* --- RIGHT SIDE: FORM --- */}
         <div className="w-full md:w-7/12 p-8 md:p-20 bg-slate-50 flex flex-col justify-center relative">
           
           <div className="mb-12">
@@ -87,6 +97,7 @@ export default function Login() {
               <input 
                 type="email" 
                 required
+                value={email}
                 placeholder="admin@gsj.com" 
                 className="w-full bg-white p-4 border border-slate-200 rounded-xl focus:ring-2 focus:ring-gold/20 focus:border-gold outline-none transition-all text-slate-800 placeholder:text-slate-300 shadow-sm" 
                 onChange={(e) => setEmail(e.target.value)} 
@@ -100,6 +111,7 @@ export default function Login() {
               <input 
                 type="password" 
                 required
+                value={password}
                 placeholder="••••••••" 
                 className="w-full bg-white p-4 border border-slate-200 rounded-xl focus:ring-2 focus:ring-gold/20 focus:border-gold outline-none transition-all text-slate-800 placeholder:text-slate-300 shadow-sm" 
                 onChange={(e) => setPassword(e.target.value)} 
@@ -124,7 +136,6 @@ export default function Login() {
             </motion.button>
           </form>
 
-          {/* Additional Footer Branding */}
           <div className="mt-16 pt-8 border-t border-slate-100 flex items-center justify-between">
             <p className="text-[10px] text-slate-400 uppercase tracking-widest font-medium">
               &copy; {new Date().getFullYear()} GS&J Portal
