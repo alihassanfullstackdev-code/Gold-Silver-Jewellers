@@ -4,11 +4,7 @@ use Illuminate\Http\Request;
 
 define('LARAVEL_START', microtime(true));
 
-// Warnings block karein taake Laravel clean start ho sake
-error_reporting(0);
-ini_set('display_errors', 0);
-
-// Storage folders in /tmp
+// Vercel storage setup
 $storagePath = '/tmp/storage/framework/';
 foreach (['views', 'cache', 'sessions'] as $folder) {
     if (!is_dir($storagePath . $folder)) {
@@ -16,16 +12,21 @@ foreach (['views', 'cache', 'sessions'] as $folder) {
     }
 }
 
-// Absolute paths use karein
+// Autoloader load karein
 require __DIR__ . '/../vendor/autoload.php';
+
+// Bootstrap application
 $app = require_once __DIR__ . '/../bootstrap/app.php';
 
-// Vercel specific storage config
+// Vercel storage fix
 $app->useStoragePath('/tmp/storage');
 
 $kernel = $app->make(Illuminate\Contracts\Http\Kernel::class);
+
 $response = $kernel->handle(
     $request = Request::capture()
 );
+
 $response->send();
+
 $kernel->terminate($request, $response);

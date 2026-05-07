@@ -14,7 +14,7 @@ Route::get('/connection-test', function () {
         'message' => 'Mubarak ho! Backend Connected.'
     ]);
 });
-
+Route::get('/', function() { return "Backend is Live!"; });
 Route::post('/login', [AuthController::class, 'login']);
 Route::apiResource('rates', MetalRateController::class)->only(['index', 'store', 'destroy']);
 Route::apiResource('categories', CategoryController::class);
