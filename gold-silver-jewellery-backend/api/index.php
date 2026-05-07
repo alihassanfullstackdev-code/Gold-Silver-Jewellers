@@ -4,21 +4,23 @@ use Illuminate\Http\Request;
 
 define('LARAVEL_START', microtime(true));
 
-// Vercel storage setup
-$storagePath = '/tmp/storage/framework/';
-$folders = ['views', 'cache', 'sessions'];
+// Warnings block karein taake Laravel clean start ho sake
+error_reporting(0);
+ini_set('display_errors', 0);
 
-foreach ($folders as $folder) {
+// Storage folders in /tmp
+$storagePath = '/tmp/storage/framework/';
+foreach (['views', 'cache', 'sessions'] as $folder) {
     if (!is_dir($storagePath . $folder)) {
         @mkdir($storagePath . $folder, 0755, true);
     }
 }
 
+// Absolute paths use karein
 require __DIR__ . '/../vendor/autoload.php';
-
 $app = require_once __DIR__ . '/../bootstrap/app.php';
 
-// Force Laravel to use /tmp for all storage
+// Vercel specific storage config
 $app->useStoragePath('/tmp/storage');
 
 $kernel = $app->make(Illuminate\Contracts\Http\Kernel::class);
