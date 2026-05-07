@@ -19,7 +19,7 @@ export default function Collections() {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const res = await axios.get('http://127.0.0.1:8000/api/products?all=true');
+        const res = await axios.get('import.meta.env.VITE_API_BASE_URL/products?all=true');
         const data = Array.isArray(res.data) ? res.data : res.data.data;
         setProducts(data);
       } catch (err) {
@@ -99,7 +99,7 @@ export default function Collections() {
                 {displayedProducts.map((product) => (
                   <motion.div key={product.id} layout initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.9 }} className="group">
                     <div className="aspect-[3/4] overflow-hidden bg-white/5 border border-white/10 relative group-hover:border-gold/30 transition-all duration-500">
-                      <img src={`http://127.0.0.1:8000/storage/${product.image}`} className="w-full h-full object-cover opacity-80 group-hover:opacity-100 group-hover:scale-110 transition-all duration-1000" />
+                      <img src={`${import.meta.env.VITE_API_BASE_URL}/storage/${product.image}`} className="w-full h-full object-cover opacity-80 group-hover:opacity-100 group-hover:scale-110 transition-all duration-1000" />
                       
                       {/* Hover Add to Cart */}
                       <div className="absolute inset-0 flex items-end justify-center p-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">

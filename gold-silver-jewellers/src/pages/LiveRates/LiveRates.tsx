@@ -19,7 +19,7 @@ export default function LiveRates() {
     const fetchRates = async (pageNum = 1) => {
         try {
             const token = localStorage.getItem('admin_token');
-            const res = await axios.get(`http://127.0.0.1:8000/api/rates?page=${pageNum}`, {
+            const res = await axios.get(`import.meta.env.VITE_API_BASE_URL/rates?page=${pageNum}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             
@@ -40,7 +40,7 @@ export default function LiveRates() {
         setLoading(true);
         try {
             const token = localStorage.getItem('admin_token');
-            await axios.post('http://127.0.0.1:8000/api/rates', formData, {
+            await axios.post('import.meta.env.VITE_API_BASE_URL/rates', formData, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setFormData({ gold_24k: '', silver: '', platinum: '' });
@@ -57,7 +57,7 @@ export default function LiveRates() {
         if (!window.confirm("Are you sure?")) return;
         try {
             const token = localStorage.getItem('admin_token');
-            await axios.delete(`http://127.0.0.1:8000/api/rates/${id}`, {
+            await axios.delete(`import.meta.env.VITE_API_BASE_URL/rates/${id}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             fetchRates(page);

@@ -17,7 +17,7 @@ export default function Categories() {
     const fetchCategories = async (page = 1) => {
         setFetchLoading(true);
         try {
-            const res = await axios.get(`http://127.0.0.1:8000/api/categories?page=${page}`);
+            const res = await axios.get(`import.meta.env.VITE_API_BASE_URL/categories?page=${page}`);
             // Laravel paginate() response mein data 'data' key mein hota hai
             setCategories(res.data.data);
             setPagination(res.data);
@@ -35,7 +35,7 @@ export default function Categories() {
         e.preventDefault();
         setLoading(true);
         try {
-            await axios.post('http://127.0.0.1:8000/api/categories', { name });
+            await axios.post('import.meta.env.VITE_API_BASE_URL/categories', { name });
             setName('');
             fetchCategories(1); // Pehle page par wapis le jao naye item ke baad
         } catch (err) {
@@ -47,7 +47,7 @@ export default function Categories() {
 
     const handleUpdate = async (id: number) => {
         try {
-            await axios.put(`http://127.0.0.1:8000/api/categories/${id}`, { name: editName });
+            await axios.put(`import.meta.env.VITE_API_BASE_URL/categories/${id}`, { name: editName });
             setEditingId(null);
             fetchCategories(currentPage); // Current page reload karo
         } catch (err) {
@@ -58,7 +58,7 @@ export default function Categories() {
     const handleDelete = async (id: number) => {
         if (!window.confirm("Delete this category? All related products will be removed!")) return;
         try {
-            await axios.delete(`http://127.0.0.1:8000/api/categories/${id}`);
+            await axios.delete(`import.meta.env.VITE_API_BASE_URL/categories/${id}`);
             fetchCategories(currentPage);
         } catch (err) {
             alert("Delete failed");

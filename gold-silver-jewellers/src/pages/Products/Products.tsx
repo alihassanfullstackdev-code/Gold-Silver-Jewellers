@@ -21,7 +21,7 @@ export default function Products() {
     const fetchProducts = async (page = 1) => {
         setLoading(true);
         try {
-            const res = await axios.get(`http://127.0.0.1:8000/api/products?page=${page}`);
+            const res = await axios.get(`import.meta.env.VITE_API_BASE_URL/products?page=${page}`);
             setProducts(res.data.data);
             setPagination(res.data);
             setCurrentPage(page);
@@ -48,7 +48,7 @@ export default function Products() {
     const deleteProduct = async (id: number) => {
         if (!window.confirm("Are you sure you want to delete this masterpiece?")) return;
         try {
-            await axios.delete(`http://127.0.0.1:8000/api/products/${id}`);
+            await axios.delete(`import.meta.env.VITE_API_BASE_URL/products/${id}`);
             fetchProducts(currentPage);
         } catch (err) {
             alert("Delete failed");
@@ -123,7 +123,7 @@ export default function Products() {
                                         <div className="flex items-center gap-4">
                                             <div className="h-14 w-14 rounded-2xl overflow-hidden border border-white/10 bg-black shadow-inner">
                                                 <img 
-                                                    src={`http://127.0.0.1:8000/storage/${p.image}`} 
+                                                    src={`${import.meta.env.VITE_API_BASE_URL}/storage/${p.image}`} 
                                                     className="h-full w-full object-cover group-hover:scale-110 transition-transform duration-500"
                                                     onError={(e) => { (e.target as HTMLImageElement).src = 'https://via.placeholder.com/100?text=No+Image' }}
                                                 />
