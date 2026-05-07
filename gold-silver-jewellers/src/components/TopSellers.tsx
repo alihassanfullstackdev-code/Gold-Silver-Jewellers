@@ -71,7 +71,7 @@ export default function TopSellers() {
               <div className="w-full md:w-[45%] group relative">
                 <div className="relative aspect-[4/5] overflow-hidden bg-[#080808] border border-white/10 group-hover:border-gold/30 transition-all duration-700">
                   <img 
-                    src={`http://127.0.0.1:8000/storage/${product.image}`} 
+                    src={`${import.meta.env.VITE_API_BASE_URL}/storage/${product.image}`}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-1000" 
                     alt={product.name} 
                   />
