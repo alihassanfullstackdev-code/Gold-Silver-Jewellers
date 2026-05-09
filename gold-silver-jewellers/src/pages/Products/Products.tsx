@@ -18,7 +18,6 @@ export default function Products() {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedProduct, setSelectedProduct] = useState<any>(null);
 
-    // FIX: Backticks for API variable and Authorization Headers
     const fetchProducts = async (page = 1) => {
         setLoading(true);
         try {
@@ -27,7 +26,6 @@ export default function Products() {
                 headers: { Authorization: `Bearer ${token}` }
             });
             
-            // Safety Check for Data Structure
             setProducts(res.data?.data || []);
             setPagination(res.data);
             setCurrentPage(page);
@@ -43,7 +41,6 @@ export default function Products() {
         fetchProducts(currentPage); 
     }, []);
 
-    // Handlers
     const handleAddNew = () => {
         setSelectedProduct(null);
         setIsModalOpen(true);
@@ -55,22 +52,34 @@ export default function Products() {
     };
 
     const deleteProduct = async (id: number) => {
-        if (!window.confirm("CRITICAL: Are you sure you want to permanently remove this masterpiece from the vault?")) return;
+        if (!window.confirm("CRITICAL: Are you sure you want to permanently remove this masterpiece?")) return;
         try {
             const token = localStorage.getItem('admin_token');
-            // FIX: Template literal for delete URL
             await axios.delete(`${import.meta.env.VITE_API_BASE_URL}/products/${id}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             fetchProducts(currentPage);
         } catch (err) {
-            alert("Delete failed. Unauthorized or server busy.");
+            alert("Delete failed.");
         }
+    };
+
+    // Helper function to get clean image URL
+    const getProductImage = (imagePath: string) => {
+        if (!imagePath) return 'https://placehold.co/400x400/080808/D4AF37?text=No+Image';
+        
+        // Base URL se '/api' hatana taake storage path sahi bane
+        const baseUrl = import.meta.env.VITE_API_BASE_URL.replace('/api', '');
+        
+        // Agar path mein pehle se 'http' hai toh direct return karein
+        if (imagePath.startsWith('http')) return imagePath;
+        
+        // Warna storage path build karein
+        return `${baseUrl}/storage/${imagePath}`;
     };
 
     return (
         <div className="p-6 md:p-10 max-w-[1600px] mx-auto space-y-10 min-h-screen text-slate-200">
-            {/* Unified Luxury Header */}
             <header className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
                 <div>
                     <h2 className="text-4xl font-serif text-white tracking-tight flex items-center gap-4">
@@ -101,7 +110,6 @@ export default function Products() {
                 </div>
             </header>
 
-            {/* Main Inventory Table */}
             <div className="bg-white/[0.02] border border-white/10 rounded-[3rem] overflow-hidden backdrop-blur-sm shadow-2xl flex flex-col">
                 <div className="p-8 border-b border-white/5 flex justify-between items-center bg-white/[0.01]">
                     <h3 className="text-xl text-white font-medium flex items-center gap-3">
@@ -152,12 +160,11 @@ export default function Products() {
                                     <td className="px-8 py-5">
                                         <div className="flex items-center gap-5">
                                             <div className="h-16 w-16 rounded-2xl overflow-hidden border border-white/10 bg-black/40 shadow-inner group-hover:border-gold/30 transition-all duration-500">
-                                                {/* FIX: Formatted Image URL */}
                                                 <img 
-                                                    src={`${import.meta.env.VITE_API_BASE_URL.replace('/api', '')}/storage/${p.image}`} 
+                                                    src={getProductImage(p.image)} 
                                                     className="h-full w-full object-cover group-hover:scale-110 transition-transform duration-700"
                                                     alt={p.name}
-                                                    onError={(e) => { (e.target as HTMLImageElement).src = 'https://placeholder.co/150?text=Jewelry' }}
+                                                    onError={(e) => { (e.target as HTMLImageElement).src = 'https://placehold.co/400x400/080808/D4AF37?text=Jewelry' }}
                                                 />
                                             </div>
                                             <div>
@@ -214,7 +221,6 @@ export default function Products() {
                     </table>
                 </div>
                 
-                {/* Pagination Registry */}
                 <div className="p-8 border-t border-white/5 flex flex-col sm:flex-row items-center justify-between gap-6 bg-black/20">
                     <p className="text-[10px] text-slate-600 uppercase tracking-[0.3em] font-black italic">
                         Viewing {products.length} of {pagination?.total || 0} Artifacts
@@ -243,7 +249,6 @@ export default function Products() {
                 </div>
             </div>
 
-            {/* Combined Modal Component */}
             <ProductModal 
                 isOpen={isModalOpen} 
                 onClose={() => setIsModalOpen(false)} 
