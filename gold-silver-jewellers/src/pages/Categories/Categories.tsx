@@ -13,7 +13,6 @@ export default function Categories() {
     const [loading, setLoading] = useState(false);
     const [fetchLoading, setFetchLoading] = useState(true);
 
-    // FIX: Backticks use kiye hain variables fetch karne ke liye
     const fetchCategories = async (page = 1) => {
         setFetchLoading(true);
         try {
@@ -21,8 +20,6 @@ export default function Categories() {
             const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/categories?page=${page}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
-            
-            // Laravel Pagination structure check
             setCategories(res.data?.data || []);
             setPagination(res.data);
             setCurrentPage(page);
@@ -43,7 +40,6 @@ export default function Categories() {
         setLoading(true);
         try {
             const token = localStorage.getItem('admin_token');
-            // FIX: Template literal (Backticks)
             await axios.post(`${import.meta.env.VITE_API_BASE_URL}/categories`, { name }, {
                 headers: { Authorization: `Bearer ${token}` }
             });
@@ -57,9 +53,9 @@ export default function Categories() {
     };
 
     const handleUpdate = async (id: number) => {
+        if (!editName.trim()) return;
         try {
             const token = localStorage.getItem('admin_token');
-            // FIX: Template literal (Backticks)
             await axios.put(`${import.meta.env.VITE_API_BASE_URL}/categories/${id}`, { name: editName }, {
                 headers: { Authorization: `Bearer ${token}` }
             });
@@ -74,7 +70,6 @@ export default function Categories() {
         if (!window.confirm("CRITICAL: Deleting this category might hide all related products! Proceed?")) return;
         try {
             const token = localStorage.getItem('admin_token');
-            // FIX: Template literal (Backticks)
             await axios.delete(`${import.meta.env.VITE_API_BASE_URL}/categories/${id}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
@@ -85,51 +80,51 @@ export default function Categories() {
     };
 
     return (
-        <div className="p-6 md:p-10 max-w-[1600px] mx-auto space-y-10 text-slate-200">
-            {/* Header - Unified with LiveRates style */}
+        <div className="p-4 md:p-10 max-w-[1600px] mx-auto space-y-8 md:space-y-10 text-slate-200 overflow-x-hidden">
+            {/* Header - Responsive */}
             <header className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-                <div>
-                    <h2 className="text-4xl font-serif text-white tracking-tight flex items-center gap-4">
-                        <Layers className="text-gold" size={32} />
-                        Inventory <span className="text-gold italic">Taxonomy</span>
+                <div className="max-w-full">
+                    <h2 className="text-3xl md:text-4xl font-serif text-white tracking-tight flex items-center gap-3 md:gap-4 flex-wrap">
+                        <Layers className="text-gold shrink-0" size={32} />
+                        <span className="break-words">Inventory <span className="text-gold italic">Taxonomy</span></span>
                     </h2>
-                    <p className="text-slate-500 text-sm mt-2 font-medium tracking-wide">
+                    <p className="text-slate-500 text-xs md:text-sm mt-2 font-medium tracking-wide break-words">
                         Manage premium classifications and product hierarchy for your catalog.
                     </p>
                 </div>
-                <div className="bg-white/5 border border-white/10 px-6 py-3 rounded-2xl backdrop-blur-md">
+                <div className="bg-white/5 border border-white/10 px-4 py-2 md:px-6 md:py-3 rounded-2xl backdrop-blur-md self-start md:self-center">
                     <span className="text-[10px] block text-slate-500 font-bold uppercase mb-1">Status</span>
-                    <div className="flex items-center gap-2 text-emerald-400 font-mono text-xs">
-                        <div className="h-2 w-2 bg-emerald-500 rounded-full animate-ping"></div>
+                    <div className="flex items-center gap-2 text-emerald-400 font-mono text-[10px] md:text-xs">
+                        <div className="h-2 w-2 bg-emerald-500 rounded-full animate-ping shrink-0"></div>
                         Connected to Core
                     </div>
                 </div>
             </header>
 
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
-                {/* Control Panel (Entry Form) */}
-                <div className="lg:col-span-4">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-10 items-start">
+                {/* Control Panel (Entry Form) - Responsive */}
+                <div className="lg:col-span-4 w-full">
                     <motion.div 
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
-                        className="bg-gradient-to-br from-white/[0.05] to-transparent border border-white/10 p-8 rounded-[3rem] shadow-2xl sticky top-8"
+                        className="bg-gradient-to-br from-white/[0.05] to-transparent border border-white/10 p-6 md:p-8 rounded-[2rem] md:rounded-[3rem] shadow-2xl lg:sticky lg:top-8"
                     >
-                        <h3 className="text-xl font-semibold mb-8 flex items-center gap-3">
-                            <Plus size={24} className="text-gold" /> Add Classification
+                        <h3 className="text-lg md:text-xl font-semibold mb-6 md:mb-8 flex items-center gap-3">
+                            <Plus size={24} className="text-gold shrink-0" /> Add Classification
                         </h3>
-                        <form onSubmit={handleSubmit} className="space-y-6">
+                        <form onSubmit={handleSubmit} className="space-y-4 md:space-y-6">
                             <div className="space-y-2">
-                                <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] ml-1">New Collection Name</label>
+                                <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] ml-1 italic">New Collection Name</label>
                                 <input 
                                     type="text" required value={name}
                                     onChange={(e) => setName(e.target.value)}
-                                    className="w-full bg-black/40 border border-white/10 p-5 rounded-2xl outline-none focus:border-gold/60 focus:ring-4 focus:ring-gold/5 transition-all text-white placeholder:text-slate-700"
+                                    className="w-full bg-black/40 border border-white/10 p-4 md:p-5 rounded-2xl outline-none focus:border-gold/60 focus:ring-4 focus:ring-gold/5 transition-all text-white placeholder:text-slate-700 text-sm md:text-base"
                                     placeholder="e.g. Bridal Masterpieces"
                                 />
                             </div>
                             <button 
                                 disabled={loading}
-                                className="w-full bg-gold hover:bg-white text-slate-900 font-black py-5 rounded-[2rem] transition-all flex items-center justify-center gap-3 shadow-lg active:scale-95 disabled:opacity-50"
+                                className="w-full bg-gold hover:bg-white text-slate-900 font-black py-4 md:py-5 rounded-[1.5rem] md:rounded-[2rem] transition-all flex items-center justify-center gap-3 shadow-lg active:scale-95 disabled:opacity-50 text-sm md:text-base"
                             >
                                 {loading ? <Loader2 className="animate-spin" /> : "INITIALIZE CATEGORY"}
                             </button>
@@ -137,25 +132,25 @@ export default function Categories() {
                     </motion.div>
                 </div>
 
-                {/* Audit View (Table) */}
-                <div className="lg:col-span-8 bg-white/[0.02] border border-white/10 rounded-[3rem] overflow-hidden flex flex-col shadow-inner">
-                    <div className="p-8 border-b border-white/5 flex justify-between items-center bg-white/[0.01]">
-                        <h3 className="text-xl text-white font-medium flex items-center gap-3">Active Classifications</h3>
-                        <span className="bg-white/5 px-4 py-1 rounded-full text-[10px] font-black text-slate-400 uppercase tracking-widest border border-white/10">
+                {/* Audit View (Table) - Responsive with Scroll */}
+                <div className="lg:col-span-8 bg-white/[0.02] border border-white/10 rounded-[2rem] md:rounded-[3rem] overflow-hidden flex flex-col shadow-inner w-full">
+                    <div className="p-6 md:p-8 border-b border-white/5 flex flex-wrap justify-between items-center gap-4 bg-white/[0.01]">
+                        <h3 className="text-lg md:text-xl text-white font-medium flex items-center gap-3">Active Classifications</h3>
+                        <span className="bg-white/5 px-4 py-1 rounded-full text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-widest border border-white/10">
                             Total: {pagination?.total || 0}
                         </span>
                     </div>
 
-                    <div className="overflow-x-auto min-h-[400px]">
-                        <table className="w-full text-left">
-                            <thead className="bg-white/[0.03] text-[10px] text-slate-500 uppercase font-black tracking-widest">
+                    <div className="overflow-x-auto w-full scrollbar-hide">
+                        <table className="w-full text-left min-w-[500px]">
+                            <thead className="bg-white/[0.03] text-[10px] text-slate-500 uppercase font-black tracking-widest border-b border-white/5">
                                 <tr>
-                                    <th className="px-8 py-5">Reference ID</th>
-                                    <th className="px-8 py-5">Display Identity</th>
-                                    <th className="px-8 py-5 text-right">System Actions</th>
+                                    <th className="px-6 py-4 md:px-8 md:py-5">Reference ID</th>
+                                    <th className="px-6 py-4 md:px-8 md:py-5">Display Identity</th>
+                                    <th className="px-6 py-4 md:px-8 md:py-5 text-right">Actions</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-white/5 text-sm">
+                            <tbody className="divide-y divide-white/5 text-xs md:text-sm">
                                 {fetchLoading ? (
                                     <tr>
                                         <td colSpan={3} className="py-20 text-center">
@@ -169,36 +164,38 @@ export default function Categories() {
                                                 key={cat.id} layout initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, x: -20 }}
                                                 className="hover:bg-white/[0.03] transition-colors group"
                                             >
-                                                <td className="px-8 py-6 text-slate-500 font-mono text-xs">#CAT-{cat.id.toString().padStart(3, '0')}</td>
-                                                <td className="px-8 py-6">
+                                                <td className="px-6 py-4 md:px-8 md:py-6 text-slate-500 font-mono text-[10px]">#CAT-{cat.id.toString().padStart(3, '0')}</td>
+                                                <td className="px-6 py-4 md:px-8 md:py-6">
                                                     {editingId === cat.id ? (
-                                                        <div className="flex items-center gap-2">
+                                                        <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
                                                             <input 
                                                                 autoFocus
-                                                                className="bg-black/60 border border-gold/30 px-4 py-2 rounded-xl outline-none text-white font-medium focus:ring-2 focus:ring-gold/20"
+                                                                className="bg-black/60 border border-gold/30 px-3 py-1.5 md:px-4 md:py-2 rounded-xl outline-none text-white font-medium focus:ring-2 focus:ring-gold/20 text-xs md:text-sm min-w-[120px]"
                                                                 value={editName}
                                                                 onChange={(e) => setEditName(e.target.value)}
                                                             />
-                                                            <button onClick={() => handleUpdate(cat.id)} className="p-2 bg-emerald-500/20 text-emerald-400 rounded-lg hover:bg-emerald-500/30 transition-all"><Check size={16}/></button>
-                                                            <button onClick={() => setEditingId(null)} className="p-2 bg-red-500/20 text-red-400 rounded-lg hover:bg-red-500/30 transition-all"><X size={16}/></button>
+                                                            <div className="flex gap-1">
+                                                                <button onClick={() => handleUpdate(cat.id)} className="p-2 bg-emerald-500/20 text-emerald-400 rounded-lg hover:bg-emerald-500/30 transition-all"><Check size={14}/></button>
+                                                                <button onClick={() => setEditingId(null)} className="p-2 bg-red-500/20 text-red-400 rounded-lg hover:bg-red-500/30 transition-all"><X size={14}/></button>
+                                                            </div>
                                                         </div>
                                                     ) : (
-                                                        <span className="text-white font-medium group-hover:text-gold transition-colors">{cat.name}</span>
+                                                        <span className="text-white font-medium group-hover:text-gold transition-colors break-words">{cat.name}</span>
                                                     )}
                                                 </td>
-                                                <td className="px-8 py-6 text-right">
-                                                    <div className="flex items-center justify-end gap-3 opacity-0 group-hover:opacity-100 transition-all">
+                                                <td className="px-6 py-4 md:px-8 md:py-6 text-right">
+                                                    <div className="flex items-center justify-end gap-2 md:gap-3 opacity-0 group-hover:opacity-100 transition-all">
                                                         <button 
                                                             onClick={() => { setEditingId(cat.id); setEditName(cat.name); }}
                                                             className="p-2 text-slate-600 hover:text-gold hover:bg-gold/10 rounded-xl transition-all"
                                                         >
-                                                            <Edit3 size={18} />
+                                                            <Edit3 size={16} />
                                                         </button>
                                                         <button 
                                                             onClick={() => handleDelete(cat.id)}
                                                             className="p-2 text-slate-600 hover:text-red-500 hover:bg-red-500/10 rounded-xl transition-all"
                                                         >
-                                                            <Trash2 size={18} />
+                                                            <Trash2 size={16} />
                                                         </button>
                                                     </div>
                                                 </td>
@@ -210,9 +207,9 @@ export default function Categories() {
                         </table>
                     </div>
 
-                    {/* Pagination Bar - Styled like LiveRates */}
-                    <div className="p-6 bg-black/20 border-t border-white/5 flex items-center justify-between">
-                        <div className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">
+                    {/* Pagination Bar - Responsive */}
+                    <div className="p-4 md:p-6 bg-black/20 border-t border-white/5 flex flex-col sm:flex-row items-center justify-between gap-4">
+                        <div className="text-[9px] md:text-[10px] text-slate-500 font-bold uppercase tracking-widest text-center">
                             Page {currentPage} of {pagination?.last_page || 1}
                         </div>
                         <div className="flex gap-2">
@@ -221,14 +218,14 @@ export default function Categories() {
                                 disabled={currentPage === 1}
                                 className="p-2 bg-white/5 border border-white/10 rounded-xl disabled:opacity-20 hover:bg-white/10 transition-all text-slate-200"
                             >
-                                <ChevronLeft size={20} />
+                                <ChevronLeft size={18} />
                             </button>
                             <button 
                                 onClick={() => fetchCategories(currentPage + 1)}
                                 disabled={currentPage === pagination?.last_page}
                                 className="p-2 bg-white/5 border border-white/10 rounded-xl disabled:opacity-20 hover:bg-white/10 transition-all text-slate-200"
                             >
-                                <ChevronRight size={20} />
+                                <ChevronRight size={18} />
                             </button>
                         </div>
                     </div>
