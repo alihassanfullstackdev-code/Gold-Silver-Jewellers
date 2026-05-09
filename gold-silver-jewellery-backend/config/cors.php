@@ -4,28 +4,26 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Cross-Origin Resource Sharing (CORS) Configuration
+    | Final CORS Configuration (Fixed & Strict)
     |--------------------------------------------------------------------------
-    |
-    | Here you may configure your settings for cross-origin resource sharing
-    | or "CORS". This determines what cross-origin operations may execute
-    | in web browsers. You are free to adjust these settings as needed.
-    |
-    | To learn more: https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS
-    |
     */
 
-    'paths' => ['api/*', 'sanctum/csrf-cookie'],
+    // Saare routes allow kar diye hain taake kisi bhi path par error na aaye
+    'paths' => ['*', 'api/*', 'sanctum/csrf-cookie'],
 
     'allowed_methods' => ['*'],
 
     'allowed_origins' => [
+        // Production Domains
         'https://gold-silver-jewellers.vercel.app',
-        'https://gold-silver-jewellers-production.up.railway.app',
-        'http://localhost:3000',
-        // 'http://localhost:5173',
-        'http://127.0.0.1:3000',
-        '*',
+        // 'https://gold-silver-jewellers-production.up.railway.app',
+        
+        // Localhost Domains (As per your request)
+        // 'http://localhost:3000',
+        // 'http://localhost:5173', 
+        // 'http://127.0.0.1:3000',
+        // 'http://127.0.0.1:5173',
+        // 'http://localhost:8000',
     ],
 
     'allowed_origins_patterns' => [],
@@ -36,6 +34,7 @@ return [
 
     'max_age' => 0,
 
-    'supports_credentials' => false,
+    // ISAY TRUE RAKHEIN: Yeh login sessions aur auth tokens ke liye zaroori hai
+    'supports_credentials' => true,
 
 ];
