@@ -12,8 +12,10 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('categories', function (Blueprint $table) {
-            $table->id();
-            $table->timestamps();
+            $table->id(); // bigint(20) UNSIGNED, AUTO_INCREMENT
+            $table->string('name'); // varchar(255)
+            $table->string('slug')->unique(); // varchar(255) + unique index
+            $table->timestamps(); // created_at aur updated_at dono handles karta hai
         });
     }
 
