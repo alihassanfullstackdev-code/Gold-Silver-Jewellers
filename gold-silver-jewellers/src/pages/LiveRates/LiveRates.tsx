@@ -5,8 +5,8 @@ import { TrendingUp, Save, History, ChevronLeft, ChevronRight, Activity, Diamond
 
 export default function LiveRates() {
     const [latestRate, setLatestRate] = useState<any>(null);
-    const [history, setHistory] = useState([]);
-    const [meta, setMeta] = useState<any>(null); // Pagination data
+    const [history, setHistory] = useState<any[]>([]); // Initialize as empty array
+    const [meta, setMeta] = useState<any>(null); 
     const [page, setPage] = useState(1);
     const [loading, setLoading] = useState(false);
 
@@ -19,49 +19,60 @@ export default function LiveRates() {
     const fetchRates = async (pageNum = 1) => {
         try {
             const token = localStorage.getItem('admin_token');
-            const res = await axios.get(`import.meta.env.VITE_API_BASE_URL/rates?page=${pageNum}`, {
+            // FIX: Template Literals (Backticks) use kiye hain
+            const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/rates?page=${pageNum}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             
-            // Laravel Resource collection meta data handles this
-            setHistory(res.data.data);
+            // Laravel Resource structure handling
+            const fetchedData = res.data.data || [];
+            setHistory(fetchedData);
             setMeta(res.data.meta); 
             
-            if (pageNum === 1) setLatestRate(res.data.data[0]);
+            if (pageNum === 1 && fetchedData.length > 0) {
+                setLatestRate(fetchedData[0]);
+            }
         } catch (err) {
-            console.error("Fetch failed");
+            console.error("Fetch failed", err);
+            setHistory([]); // Error par empty array taake crash na ho
         }
     };
 
-    useEffect(() => { fetchRates(page); }, [page]);
+    useEffect(() => { 
+        fetchRates(page); 
+    }, [page]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
         try {
             const token = localStorage.getItem('admin_token');
-            await axios.post('import.meta.env.VITE_API_BASE_URL/rates', formData, {
+            // FIX: Backticks for API call
+            await axios.post(`${import.meta.env.VITE_API_BASE_URL}/rates`, formData, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setFormData({ gold_24k: '', silver: '', platinum: '' });
-            setPage(1); // Reset to first page to see new entry
+            setPage(1); 
             fetchRates(1);
         } catch (err) {
-            alert("Error: Backend sync failed.");
+            alert("Error: Backend sync failed. Check your token or network.");
         } finally {
             setLoading(false);
         }
     };
 
     const handleDelete = async (id: number) => {
-        if (!window.confirm("Are you sure?")) return;
+        if (!window.confirm("Are you sure? This will remove this entry from historical logs.")) return;
         try {
             const token = localStorage.getItem('admin_token');
-            await axios.delete(`import.meta.env.VITE_API_BASE_URL/rates/${id}`, {
+            // FIX: Backticks for delete call
+            await axios.delete(`${import.meta.env.VITE_API_BASE_URL}/rates/${id}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             fetchRates(page);
-        } catch (err) { alert("Delete failed"); }
+        } catch (err) { 
+            alert("Delete failed. Unauthorized access or server error."); 
+        }
     };
 
     return (
@@ -73,13 +84,13 @@ export default function LiveRates() {
                         <Diamond className="text-gold animate-pulse" size={32} />
                         Global Metal <span className="text-gold italic">Rates</span>
                     </h2>
-                    <p className="text-slate-500 text-sm mt-2 font-medium tracking-wide text-slate-200">
+                    <p className="text-slate-500 text-sm mt-2 font-medium tracking-wide">
                         Enterprise-grade pricing control for Gold, Silver & Platinum inventory.
                     </p>
                 </div>
                 <div className="bg-white/5 border border-white/10 px-6 py-3 rounded-2xl backdrop-blur-md">
                     <span className="text-[10px] block text-slate-500 font-bold uppercase mb-1">Status</span>
-                    <div className="flex items-center gap-2 text-emerald-400 font-mono text-xs text-emerald-400">
+                    <div className="flex items-center gap-2 text-emerald-400 font-mono text-xs">
                         <div className="h-2 w-2 bg-emerald-500 rounded-full animate-ping"></div>
                         Market Sync Active
                     </div>
@@ -118,21 +129,21 @@ export default function LiveRates() {
                                     <input type="number" required value={formData.platinum} onChange={(e) => setFormData({...formData, platinum: e.target.value})} className="w-full bg-black/20 border border-white/10 p-4 rounded-2xl outline-none focus:border-blue-400 transition-all font-mono" placeholder="110,000" />
                                 </div>
                             </div>
-                            <button disabled={loading} className="w-full bg-gold hover:bg-white text-slate-900 font-black py-5 rounded-[2rem] transition-all flex items-center justify-center gap-3 shadow-lg active:scale-95 disabled:opacity-50 text-slate-900">
+                            <button disabled={loading} className="w-full bg-gold hover:bg-white text-slate-900 font-black py-5 rounded-[2rem] transition-all flex items-center justify-center gap-3 shadow-lg active:scale-95 disabled:opacity-50">
                                 {loading ? "SYNCHRONIZING..." : <><Save size={20} /> PUBLISH NEW RATES</>}
                             </button>
                         </form>
                     </motion.div>
                 </div>
 
-                {/* Audit Logs Section with Pagination */}
+                {/* Audit Logs Section */}
                 <div className="lg:col-span-8 bg-white/[0.02] border border-white/10 rounded-[3rem] overflow-hidden flex flex-col shadow-inner">
                     <div className="p-8 border-b border-white/5 flex justify-between items-center bg-white/[0.01]">
                         <h3 className="text-xl text-white font-medium flex items-center gap-3"><History size={22} className="text-slate-500" /> Historical Logs</h3>
                     </div>
                     <div className="overflow-x-auto min-h-[400px]">
                         <table className="w-full text-left">
-                            <thead className="bg-white/[0.03] text-[10px] text-slate-500 uppercase font-black tracking-widest text-slate-500">
+                            <thead className="bg-white/[0.03] text-[10px] text-slate-500 uppercase font-black tracking-widest">
                                 <tr>
                                     <th className="px-8 py-5">Date</th>
                                     <th className="px-8 py-5 text-gold">24K Gold</th>
@@ -143,7 +154,8 @@ export default function LiveRates() {
                             </thead>
                             <tbody className="divide-y divide-white/5 text-sm">
                                 <AnimatePresence mode='popLayout'>
-                                    {history.map((row: any) => (
+                                    {/* FIX: Safe mapping with history fallback */}
+                                    {(history || []).map((row: any) => (
                                         <motion.tr 
                                             key={row.id} layout initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, x: -20 }}
                                             className="hover:bg-white/[0.03] transition-colors group"
@@ -160,6 +172,13 @@ export default function LiveRates() {
                                         </motion.tr>
                                     ))}
                                 </AnimatePresence>
+                                {!loading && history.length === 0 && (
+                                    <tr>
+                                        <td colSpan={5} className="px-8 py-20 text-center text-slate-600 uppercase tracking-widest text-xs">
+                                            No historical data found.
+                                        </td>
+                                    </tr>
+                                )}
                             </tbody>
                         </table>
                     </div>
@@ -178,8 +197,8 @@ export default function LiveRates() {
                                 <ChevronLeft size={20} />
                             </button>
                             <button 
-                                onClick={() => setPage(prev => Math.min(meta?.last_page, prev + 1))}
-                                disabled={page === meta?.last_page}
+                                onClick={() => setPage(prev => Math.min(meta?.last_page || 1, prev + 1))}
+                                disabled={page === (meta?.last_page || 1)}
                                 className="p-2 bg-white/5 border border-white/10 rounded-xl disabled:opacity-20 hover:bg-white/10 transition-all"
                             >
                                 <ChevronRight size={20} />
@@ -214,11 +233,11 @@ function RateCard({ label, value, type, active = false }: any) {
             <div className="pt-4 border-t border-white/5 flex flex-col gap-2">
                 <div className="flex justify-between items-center text-[10px]">
                     <span className="text-slate-600 font-bold uppercase">1 Gram</span>
-                    <span className="text-white/80 font-mono text-white/80">Rs. {Number(perGram).toLocaleString()}</span>
+                    <span className="text-white/80 font-mono">Rs. {Number(perGram).toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between items-center text-[10px]">
                     <span className="text-slate-600 font-bold uppercase">10 Grams</span>
-                    <span className="text-white/80 font-mono text-white/80">Rs. {(Number(perGram)*10).toLocaleString()}</span>
+                    <span className="text-white/80 font-mono">Rs. {(Number(perGram)*10).toLocaleString()}</span>
                 </div>
             </div>
         </motion.div>
