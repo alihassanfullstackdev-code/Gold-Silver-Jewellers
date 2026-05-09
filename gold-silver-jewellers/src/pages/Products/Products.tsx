@@ -3,12 +3,12 @@ import axios from 'axios';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     Plus, Trash2, Edit3, Search, ChevronLeft, ChevronRight,
-    Loader2, PackageOpen, MoreHorizontal, Image as ImageIcon
+    Loader2, PackageOpen, MoreHorizontal, Image as ImageIcon, Activity
 } from 'lucide-react';
-import ProductModal from './AddProduct'; // Name change confirm kar lein
+import ProductModal from './AddProduct';
 
 export default function Products() {
-    const [products, setProducts] = useState([]);
+    const [products, setProducts] = useState<any[]>([]);
     const [pagination, setPagination] = useState<any>(null);
     const [currentPage, setCurrentPage] = useState(1);
     const [loading, setLoading] = useState(true);
@@ -18,192 +18,224 @@ export default function Products() {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedProduct, setSelectedProduct] = useState<any>(null);
 
+    // FIX: Backticks for API variable and Authorization Headers
     const fetchProducts = async (page = 1) => {
         setLoading(true);
         try {
-            const res = await axios.get(`import.meta.env.VITE_API_BASE_URL/products?page=${page}`);
-            setProducts(res.data.data);
+            const token = localStorage.getItem('admin_token');
+            const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/products?page=${page}`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            
+            // Safety Check for Data Structure
+            setProducts(res.data?.data || []);
             setPagination(res.data);
             setCurrentPage(page);
         } catch (err) {
-            console.error("Fetch failed");
+            console.error("Vault retrieval failed", err);
+            setProducts([]);
         } finally {
             setLoading(false);
         }
     };
 
-    useEffect(() => { fetchProducts(currentPage); }, []);
+    useEffect(() => { 
+        fetchProducts(currentPage); 
+    }, []);
 
     // Handlers
     const handleAddNew = () => {
-        setSelectedProduct(null); // Clear for Add mode
+        setSelectedProduct(null);
         setIsModalOpen(true);
     };
 
     const handleEdit = (product: any) => {
-        setSelectedProduct(product); // Fill for Edit mode
+        setSelectedProduct(product);
         setIsModalOpen(true);
     };
 
     const deleteProduct = async (id: number) => {
-        if (!window.confirm("Are you sure you want to delete this masterpiece?")) return;
+        if (!window.confirm("CRITICAL: Are you sure you want to permanently remove this masterpiece from the vault?")) return;
         try {
-            await axios.delete(`import.meta.env.VITE_API_BASE_URL/products/${id}`);
+            const token = localStorage.getItem('admin_token');
+            // FIX: Template literal for delete URL
+            await axios.delete(`${import.meta.env.VITE_API_BASE_URL}/products/${id}`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
             fetchProducts(currentPage);
         } catch (err) {
-            alert("Delete failed");
+            alert("Delete failed. Unauthorized or server busy.");
         }
     };
 
     return (
-        <div className="p-4 md:p-8 space-y-8 min-h-screen text-slate-200">
-            {/* Header Section */}
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div className="p-6 md:p-10 max-w-[1600px] mx-auto space-y-10 min-h-screen text-slate-200">
+            {/* Unified Luxury Header */}
+            <header className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
                 <div>
-                    <h2 className="text-3xl font-serif text-white italic tracking-tight">
-                        Vault <span className="text-gold underline underline-offset-8 decoration-gold/30">Inventory</span>
+                    <h2 className="text-4xl font-serif text-white tracking-tight flex items-center gap-4">
+                        <PackageOpen className="text-gold" size={32} />
+                        Vault <span className="text-gold italic">Inventory</span>
                     </h2>
-                    <p className="text-slate-500 text-sm mt-2">Oversee and refine your luxury collections</p>
+                    <p className="text-slate-500 text-sm mt-2 font-medium tracking-wide">
+                        Oversee, refine, and manage your luxury jewelry collection assets.
+                    </p>
                 </div>
                 
-                <div className="flex items-center gap-3 w-full md:w-auto">
-                    <div className="relative flex-1 md:w-64">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={16} />
+                <div className="flex flex-col sm:flex-row items-center gap-4 w-full lg:w-auto">
+                    <div className="relative w-full sm:w-80">
+                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
                         <input 
                             type="text" 
-                            placeholder="Search Vault..." 
-                            className="w-full bg-white/5 border border-white/10 pl-10 pr-4 py-2.5 rounded-xl outline-none focus:border-gold/40 text-sm transition-all"
+                            placeholder="Search Vault Identity..." 
+                            className="w-full bg-white/5 border border-white/10 pl-12 pr-4 py-3.5 rounded-[1.5rem] outline-none focus:border-gold/40 text-sm transition-all backdrop-blur-md"
                             onChange={(e) => setSearch(e.target.value)}
                         />
                     </div>
                     <button 
                         onClick={handleAddNew} 
-                        className="bg-gold hover:bg-white text-black px-6 py-2.5 rounded-xl font-black text-[10px] tracking-widest flex items-center gap-2 transition-all shadow-lg shadow-gold/10 active:scale-95"
+                        className="w-full sm:w-auto bg-gold hover:bg-white text-black px-8 py-4 rounded-[1.5rem] font-black text-[10px] tracking-[0.2em] flex items-center justify-center gap-2 transition-all shadow-lg active:scale-95"
                     >
-                        <Plus size={18} /> NEW ENTRY
+                        <Plus size={20} /> NEW MASTERPIECE
                     </button>
                 </div>
-            </div>
+            </header>
 
-            {/* Table Section */}
-            <div className="bg-white/[0.02] border border-white/10 rounded-[2rem] overflow-hidden backdrop-blur-sm shadow-2xl">
+            {/* Main Inventory Table */}
+            <div className="bg-white/[0.02] border border-white/10 rounded-[3rem] overflow-hidden backdrop-blur-sm shadow-2xl flex flex-col">
+                <div className="p-8 border-b border-white/5 flex justify-between items-center bg-white/[0.01]">
+                    <h3 className="text-xl text-white font-medium flex items-center gap-3">
+                        <Activity size={20} className="text-slate-500" /> Catalog Registry
+                    </h3>
+                    <div className="flex items-center gap-2 text-emerald-400 font-mono text-[10px] uppercase tracking-widest">
+                        <div className="h-1.5 w-1.5 bg-emerald-500 rounded-full animate-pulse" />
+                        Live Sync
+                    </div>
+                </div>
+
                 <div className="overflow-x-auto">
-                    <table className="w-full text-left border-collapse">
-                        <thead className="bg-white/5 text-[10px] uppercase tracking-[0.2em] text-slate-500 font-black">
+                    <table className="w-full text-left">
+                        <thead className="bg-white/[0.03] text-[10px] uppercase tracking-[0.2em] text-slate-500 font-black">
                             <tr>
-                                <th className="px-6 py-5">Piece Detail</th>
-                                <th className="px-6 py-5">Specifications</th>
-                                <th className="px-6 py-5">Valuation</th>
-                                <th className="px-6 py-5">Collection Flags</th>
-                                <th className="px-6 py-5 text-right">Actions</th>
+                                <th className="px-8 py-6">Piece Detail</th>
+                                <th className="px-8 py-6">Specifications</th>
+                                <th className="px-8 py-6">Valuation</th>
+                                <th className="px-8 py-6">Status Flags</th>
+                                <th className="px-8 py-6 text-right">Actions</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-white/5">
                             {loading ? (
                                 <tr>
                                     <td colSpan={5} className="py-32 text-center">
-                                        <div className="flex flex-col items-center gap-3">
-                                            <Loader2 className="animate-spin text-gold" size={32} />
-                                            <p className="text-[10px] font-mono text-slate-500 tracking-[0.3em]">SYNCHRONIZING...</p>
+                                        <div className="flex flex-col items-center gap-4">
+                                            <Loader2 className="animate-spin text-gold" size={40} />
+                                            <p className="text-[10px] font-mono text-slate-500 tracking-[0.4em] uppercase">Retrieving Vault Data...</p>
                                         </div>
                                     </td>
                                 </tr>
                             ) : products.length === 0 ? (
                                 <tr>
                                     <td colSpan={5} className="py-32 text-center">
-                                        <div className="flex flex-col items-center gap-2 text-slate-600">
-                                            <PackageOpen size={40} strokeWidth={1} />
-                                            <p className="text-sm">The vault is currently empty</p>
+                                        <div className="flex flex-col items-center gap-3 text-slate-600">
+                                            <PackageOpen size={48} strokeWidth={1} />
+                                            <p className="text-xs uppercase tracking-widest">The vault is currently empty</p>
                                         </div>
                                     </td>
                                 </tr>
                             ) : products.map((p: any) => (
-                                <tr key={p.id} className="group hover:bg-white/[0.03] transition-colors border-white/5">
-                                    <td className="px-6 py-4">
-                                        <div className="flex items-center gap-4">
-                                            <div className="h-14 w-14 rounded-2xl overflow-hidden border border-white/10 bg-black shadow-inner">
+                                <motion.tr 
+                                    key={p.id} 
+                                    initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                                    className="group hover:bg-white/[0.03] transition-colors"
+                                >
+                                    <td className="px-8 py-5">
+                                        <div className="flex items-center gap-5">
+                                            <div className="h-16 w-16 rounded-2xl overflow-hidden border border-white/10 bg-black/40 shadow-inner group-hover:border-gold/30 transition-all duration-500">
+                                                {/* FIX: Formatted Image URL */}
                                                 <img 
-                                                    src={`${import.meta.env.VITE_API_BASE_URL}/storage/${p.image}`} 
-                                                    className="h-full w-full object-cover group-hover:scale-110 transition-transform duration-500"
-                                                    onError={(e) => { (e.target as HTMLImageElement).src = 'https://via.placeholder.com/100?text=No+Image' }}
+                                                    src={`${import.meta.env.VITE_API_BASE_URL.replace('/api', '')}/storage/${p.image}`} 
+                                                    className="h-full w-full object-cover group-hover:scale-110 transition-transform duration-700"
+                                                    alt={p.name}
+                                                    onError={(e) => { (e.target as HTMLImageElement).src = 'https://via.placeholder.com/150?text=Jewelry' }}
                                                 />
                                             </div>
                                             <div>
                                                 <p className="text-sm font-bold text-white capitalize tracking-tight group-hover:text-gold transition-colors">{p.name}</p>
-                                                <p className="text-[9px] text-slate-500 uppercase font-black mt-0.5 tracking-tighter">{p.category?.name || 'Uncategorized'}</p>
+                                                <p className="text-[9px] text-slate-500 uppercase font-black mt-1 tracking-widest">{p.category?.name || 'Artifact'}</p>
                                             </div>
                                         </div>
                                     </td>
-                                    <td className="px-6 py-4">
-                                        <div className="text-[11px] space-y-1">
+                                    <td className="px-8 py-5">
+                                        <div className="text-[11px] space-y-1.5">
                                             <div className="flex items-center gap-2">
-                                                <span className={`h-1.5 w-1.5 rounded-full ${p.metal_type === 'gold' ? 'bg-gold' : 'bg-slate-400'}`} />
-                                                <span className="text-slate-300 font-bold uppercase">{p.metal_type}</span>
+                                                <span className={`h-1.5 w-1.5 rounded-full ${p.metal_type?.toLowerCase() === 'gold' ? 'bg-gold' : 'bg-slate-400'}`} />
+                                                <span className="text-slate-300 font-bold uppercase tracking-wider">{p.metal_type}</span>
                                             </div>
-                                            <p className="text-slate-500 font-mono">
-                                                {p.karat ? `${p.karat}K` : '---'} | {p.weight_grams ? `${p.weight_grams}g` : 'Fixed Weight'}
+                                            <p className="text-slate-500 font-mono italic">
+                                                {p.karat ? `${p.karat}K` : 'Pure'} | {p.weight_grams ? `${p.weight_grams}g` : 'Fixed'}
                                             </p>
                                         </div>
                                     </td>
-                                    <td className="px-6 py-4">
-                                        <div className="space-y-0.5">
-                                            <p className="text-xs font-mono text-emerald-500">PKR {Number(p.fixed_price).toLocaleString()}</p>
-                                            <p className="text-[9px] text-slate-600 font-bold uppercase">Making: {p.making_charges}</p>
+                                    <td className="px-8 py-5">
+                                        <div className="space-y-1">
+                                            <p className="text-xs font-mono text-emerald-400 font-bold">PKR {Number(p.fixed_price).toLocaleString()}</p>
+                                            <p className="text-[9px] text-slate-600 font-black uppercase">Making: {p.making_charges || '0'}</p>
                                         </div>
                                     </td>
-                                    <td className="px-6 py-4">
-                                        <div className="flex flex-wrap gap-1.5">
+                                    <td className="px-8 py-5">
+                                        <div className="flex flex-wrap gap-2">
                                             {p.in_stock ? 
-                                                <span className="text-[8px] bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 px-2 py-0.5 rounded-md font-black uppercase">In Stock</span> : 
-                                                <span className="text-[8px] bg-red-500/10 text-red-500 border border-red-500/20 px-2 py-0.5 rounded-md font-black uppercase">OOS</span>
+                                                <span className="text-[8px] bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 px-2.5 py-1 rounded-full font-black uppercase tracking-tighter">In Stock</span> : 
+                                                <span className="text-[8px] bg-red-500/10 text-red-500 border border-red-500/20 px-2.5 py-1 rounded-full font-black uppercase tracking-tighter">Sold Out</span>
                                             }
-                                            {p.is_new_arrival && <span className="text-[8px] bg-gold/10 text-gold border border-gold/20 px-2 py-0.5 rounded-md font-black uppercase">New</span>}
+                                            {p.is_new_arrival && <span className="text-[8px] bg-gold/10 text-gold border border-gold/20 px-2.5 py-1 rounded-full font-black uppercase tracking-tighter">New Arrival</span>}
                                         </div>
                                     </td>
-                                    <td className="px-6 py-4 text-right">
-                                        <div className="flex justify-end gap-2">
+                                    <td className="px-8 py-5 text-right">
+                                        <div className="flex justify-end gap-3 opacity-0 group-hover:opacity-100 transition-all duration-300">
                                             <button 
                                                 onClick={() => handleEdit(p)}
-                                                className="p-2.5 bg-white/5 hover:bg-gold/20 text-slate-400 hover:text-gold rounded-xl transition-all border border-transparent hover:border-gold/30"
+                                                className="p-3 bg-white/5 hover:bg-gold/10 text-slate-400 hover:text-gold rounded-2xl transition-all border border-white/5 hover:border-gold/20"
                                             >
-                                                <Edit3 size={16}/>
+                                                <Edit3 size={18}/>
                                             </button>
                                             <button 
                                                 onClick={() => deleteProduct(p.id)}
-                                                className="p-2.5 bg-white/5 hover:bg-red-500/20 text-slate-400 hover:text-red-500 rounded-xl transition-all border border-transparent hover:border-red-500/30"
+                                                className="p-3 bg-white/5 hover:bg-red-500/10 text-slate-400 hover:text-red-500 rounded-2xl transition-all border border-white/5 hover:border-red-500/20"
                                             >
-                                                <Trash2 size={16}/>
+                                                <Trash2 size={18}/>
                                             </button>
                                         </div>
                                     </td>
-                                </tr>
+                                </motion.tr>
                             ))}
                         </tbody>
                     </table>
                 </div>
                 
-                {/* Pagination Controls */}
-                <div className="p-6 border-t border-white/5 flex flex-col sm:flex-row items-center justify-between gap-4">
-                    <p className="text-[10px] text-slate-600 uppercase tracking-[0.2em] font-black">
-                        Showing {products.length} of {pagination?.total || 0} Pieces
+                {/* Pagination Registry */}
+                <div className="p-8 border-t border-white/5 flex flex-col sm:flex-row items-center justify-between gap-6 bg-black/20">
+                    <p className="text-[10px] text-slate-600 uppercase tracking-[0.3em] font-black italic">
+                        Viewing {products.length} of {pagination?.total || 0} Artifacts
                     </p>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-3">
                         <button 
                             disabled={currentPage === 1} 
                             onClick={() => fetchProducts(currentPage - 1)} 
-                            className="p-2 bg-white/5 border border-white/10 rounded-xl disabled:opacity-20 hover:bg-gold/10 hover:text-gold transition-all"
+                            className="p-3 bg-white/5 border border-white/10 rounded-2xl disabled:opacity-20 hover:bg-white/10 transition-all text-slate-300"
                         >
                             <ChevronLeft size={20}/>
                         </button>
                         
-                        <div className="px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-[11px] font-mono font-bold">
-                            <span className="text-gold">{currentPage}</span> / {pagination?.last_page || 1}
+                        <div className="px-6 py-2 bg-white/5 border border-white/10 rounded-2xl text-xs font-mono font-bold">
+                            <span className="text-gold">{currentPage}</span> <span className="text-slate-600 mx-2">/</span> {pagination?.last_page || 1}
                         </div>
 
                         <button 
                             disabled={currentPage === pagination?.last_page} 
                             onClick={() => fetchProducts(currentPage + 1)} 
-                            className="p-2 bg-white/5 border border-white/10 rounded-xl disabled:opacity-20 hover:bg-gold/10 hover:text-gold transition-all"
+                            className="p-3 bg-white/5 border border-white/10 rounded-2xl disabled:opacity-20 hover:bg-white/10 transition-all text-slate-300"
                         >
                             <ChevronRight size={20}/>
                         </button>
@@ -216,7 +248,7 @@ export default function Products() {
                 isOpen={isModalOpen} 
                 onClose={() => setIsModalOpen(false)} 
                 onSuccess={() => fetchProducts(currentPage)} 
-                product={selectedProduct} // null for Add, object for Edit
+                product={selectedProduct} 
             />
         </div>
     );
