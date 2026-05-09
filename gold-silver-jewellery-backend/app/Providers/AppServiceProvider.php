@@ -3,7 +3,6 @@
 namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
-use Illuminate\Support\Facades\URL;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -19,10 +18,7 @@ class AppServiceProvider extends ServiceProvider
      * Bootstrap any application services.
      */
     public function boot(): void
-{
-    // Railway par HTTPS force karne ke liye
-    if (app()->environment('production') || env('APP_ENV') === 'production') {
-        URL::forceScheme('https');
+    {
+        //
     }
-}
 }
