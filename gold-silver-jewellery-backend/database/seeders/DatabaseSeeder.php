@@ -8,15 +8,14 @@ use Illuminate\Support\Facades\Hash;
 
 class DatabaseSeeder extends Seeder
 {
-    /**
-     * Seed the application's database.
-     */
     public function run(): void
     {
-        User::factory()->create([
+        // Factory use karne ki bajaye direct Create use karein
+        User::create([
             'name' => 'Admin User',
             'email' => 'admin@gsj.com',
             'password' => Hash::make('GSJ123@'),
+            'email_verified_at' => now(), // Optional: Agar verify email ka chakkar ho
         ]);
     }
 }
