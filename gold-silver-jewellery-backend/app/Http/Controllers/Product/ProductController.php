@@ -10,25 +10,17 @@ use Illuminate\Support\Str;
 
 class ProductController extends Controller
 {
-    /**
-     * Paginated products fetch karna (With Category Relationship)
-     */
     public function index(Request $request)
     {
-        $query = Product::latest();
+        $query = Product::with('category')->latest(); // Category load karna zaroori hai
 
-        // Check karein ke kya website ne saara data manga hai?
         if ($request->has('all') && $request->all == 'true') {
-            return $query->get(); // Yeh poora data (1st, 2nd, 3rd page) bhej dega
+            return response()->json($query->get());
         }
 
-        // Dashboard ke liye purani pagination
-        return $query->paginate(10);
+        return response()->json($query->paginate(10));
     }
 
-    /**
-     * Naya Product save karna (With Image & Checkboxes)
-     */
     public function store(Request $request)
     {
         $request->validate([
@@ -38,38 +30,38 @@ class ProductController extends Controller
             'image' => 'required|image|mimes:jpeg,png,jpg,webp|max:5120',
         ]);
 
-        $data = $request->all();
+        try {
+            $data = $request->all();
 
-        // Image Handling
-        if ($request->hasFile('image')) {
-            $data['image'] = $request->file('image')->store('products', 'public');
+            // Unique Slug Logic: Agar same name ho toh time() add kar dega crash hone ki bajaye
+            $data['slug'] = Str::slug($request->name) . '-' . rand(100, 999);
+
+            if ($request->hasFile('image')) {
+                $data['image'] = $request->file('image')->store('products', 'public');
+            }
+
+            $data['is_new_arrival'] = $request->boolean('is_new_arrival');
+            $data['is_top_seller'] = $request->boolean('is_top_seller');
+            $data['is_featured'] = $request->boolean('is_featured');
+            $data['in_stock'] = $request->boolean('in_stock', true);
+
+            $product = Product::create($data);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Product published successfully',
+                'data' => $product
+            ], 201);
+
+        } catch (\Exception $e) {
+            // Asal error dekhne ke liye response
+            return response()->json([
+                'success' => false,
+                'message' => 'Database Error: ' . $e->getMessage()
+            ], 500);
         }
-
-        // Checkboxes handle karne ka sahi tareeqa (boolean casting)
-        $data['is_new_arrival'] = $request->boolean('is_new_arrival');
-        $data['is_top_seller'] = $request->boolean('is_top_seller');
-        $data['is_featured'] = $request->boolean('is_featured');
-        $data['in_stock'] = $request->boolean('in_stock', true);
-
-        $product = Product::create($data);
-
-        return response()->json([
-            'message' => 'Product published successfully',
-            'data' => $product
-        ], 201);
     }
 
-    /**
-     * Ek specific product ki detail
-     */
-    public function show(Product $product)
-    {
-        return response()->json($product->load('category'));
-    }
-
-    /**
-     * Product Update karna (Image replacement ke sath)
-     */
     public function update(Request $request, Product $product)
     {
         $request->validate([
@@ -80,36 +72,31 @@ class ProductController extends Controller
         $data = $request->all();
 
         if ($request->hasFile('image')) {
-            // Purani image delete karein
             if ($product->image) {
                 Storage::disk('public')->delete($product->image);
             }
             $data['image'] = $request->file('image')->store('products', 'public');
         }
 
-        // Slugs update karne ke liye (agar name change ho)
-        $data['slug'] = Str::slug($request->name);
+        // Slug update safety
+        $data['slug'] = Str::slug($request->name) . '-' . $product->id;
 
         $data['is_new_arrival'] = $request->boolean('is_new_arrival');
         $data['is_top_seller'] = $request->boolean('is_top_seller');
         $data['is_featured'] = $request->boolean('is_featured');
+        $data['in_stock'] = $request->boolean('in_stock');
 
         $product->update($data);
 
         return response()->json(['message' => 'Product updated successfully']);
     }
 
-    /**
-     * Product Delete karna aur image bhi storage se hatana
-     */
     public function destroy(Product $product)
     {
         if ($product->image) {
             Storage::disk('public')->delete($product->image);
         }
-
         $product->delete();
-
         return response()->json(['message' => 'Product deleted successfully']);
     }
 }
