@@ -19,10 +19,10 @@ class AppServiceProvider extends ServiceProvider
      * Bootstrap any application services.
      */
     public function boot(): void
-    {
-        // Agar environment production (Railway) hai toh HTTPS force karo
-        if (config('app.env') === 'production') {
-            URL::forceScheme('https');
-        }
+{
+    // Railway par HTTPS force karne ke liye
+    if (app()->environment('production') || env('APP_ENV') === 'production') {
+        URL::forceScheme('https');
     }
+}
 }
