@@ -157,7 +157,7 @@ export default function Products() {
                                                     src={`${import.meta.env.VITE_API_BASE_URL.replace('/api', '')}/storage/${p.image}`} 
                                                     className="h-full w-full object-cover group-hover:scale-110 transition-transform duration-700"
                                                     alt={p.name}
-                                                    onError={(e) => { (e.target as HTMLImageElement).src = 'https://via.placeholder.com/150?text=Jewelry' }}
+                                                    onError={(e) => { (e.target as HTMLImageElement).src = 'https://placeholder.co/150?text=Jewelry' }}
                                                 />
                                             </div>
                                             <div>
