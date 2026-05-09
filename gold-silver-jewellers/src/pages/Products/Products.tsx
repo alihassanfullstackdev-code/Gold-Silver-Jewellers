@@ -14,7 +14,6 @@ export default function Products() {
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState('');
 
-    // Modal States
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedProduct, setSelectedProduct] = useState<any>(null);
 
@@ -64,18 +63,20 @@ export default function Products() {
         }
     };
 
-    // Helper function to get clean image URL
+    // --- UPDATED IMAGE HELPER ---
     const getProductImage = (imagePath: string) => {
         if (!imagePath) return 'https://placehold.co/400x400/080808/D4AF37?text=No+Image';
         
-        // Base URL se '/api' hatana taake storage path sahi bane
-        const baseUrl = import.meta.env.VITE_API_BASE_URL.replace('/api', '');
-        
-        // Agar path mein pehle se 'http' hai toh direct return karein
+        // Agar imagePath full URL hai (http...) toh wahi return karein
         if (imagePath.startsWith('http')) return imagePath;
+
+        // Base URL se trailing slash aur /api dono remove karna
+        const baseUrl = import.meta.env.VITE_API_BASE_URL.replace(/\/api$/, '').replace(/\/$/, '');
         
-        // Warna storage path build karein
-        return `${baseUrl}/storage/${imagePath}`;
+        // Image path se agar shuru mein slash hai toh handle karein
+        const cleanPath = imagePath.startsWith('/') ? imagePath.substring(1) : imagePath;
+        
+        return `${baseUrl}/storage/${cleanPath}`;
     };
 
     return (
@@ -164,7 +165,11 @@ export default function Products() {
                                                     src={getProductImage(p.image)} 
                                                     className="h-full w-full object-cover group-hover:scale-110 transition-transform duration-700"
                                                     alt={p.name}
-                                                    onError={(e) => { (e.target as HTMLImageElement).src = 'https://placehold.co/400x400/080808/D4AF37?text=Jewelry' }}
+                                                    onError={(e) => { 
+                                                        const target = e.target as HTMLImageElement;
+                                                        target.onerror = null; // Infinite loop bachane ke liye
+                                                        target.src = 'https://placehold.co/400x400/080808/D4AF37?text=Jewelry';
+                                                    }}
                                                 />
                                             </div>
                                             <div>
@@ -187,7 +192,7 @@ export default function Products() {
                                     <td className="px-8 py-5">
                                         <div className="space-y-1">
                                             <p className="text-xs font-mono text-emerald-400 font-bold">PKR {Number(p.fixed_price).toLocaleString()}</p>
-                                            <p className="text-[9px] text-slate-600 font-black uppercase">Making: {p.making_charges || '0'}</p>
+                                            <p className="text-[9px] text-slate-600 font-black uppercase">Labour: {p.making_charges || '0'}</p>
                                         </div>
                                     </td>
                                     <td className="px-8 py-5">
