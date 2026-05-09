@@ -176,7 +176,6 @@ export default function Collections() {
           </div>
         </motion.div>
       </section>
-      <Footer />
     </div>
   );
 }
