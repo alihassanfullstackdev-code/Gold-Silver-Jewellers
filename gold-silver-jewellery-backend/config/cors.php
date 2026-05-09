@@ -16,7 +16,7 @@ return [
     'allowed_origins' => [
         // Production Domains
         'https://gold-silver-jewellers.vercel.app',
-        // 'https://gold-silver-jewellers-production.up.railway.app',
+        'https://gold-silver-jewellers-production.up.railway.app',
         
         // Localhost Domains (As per your request)
         // 'http://localhost:3000',
