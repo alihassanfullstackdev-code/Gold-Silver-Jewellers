@@ -19,7 +19,7 @@ export default function ProductSection({ title, subtitle, filterType }: Props) {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const res = await axios.get(`${API_BASE_URL}/api/products`);
+        const res = await axios.get(`${API_BASE_URL}/products`);
         
         // Railway response format ke mutabiq products nikalna
         const productsArray = res.data?.data || []; 
