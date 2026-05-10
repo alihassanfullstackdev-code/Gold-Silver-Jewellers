@@ -14,7 +14,7 @@ export default function ProductSection({ title, subtitle, filterType }: Props) {
   const [loading, setLoading] = useState(true);
 
   // API Base URL handle karne ke liye
-  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ;
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
   useEffect(() => {
     const fetchData = async () => {
@@ -90,8 +90,12 @@ export default function ProductSection({ title, subtitle, filterType }: Props) {
             <div key={`${product.id}-${idx}`} className="group w-[280px] md:w-[350px] flex-shrink-0">
               <div className="relative aspect-[4/5] overflow-hidden bg-[#080808] border border-white/10 group-hover:border-gold/40 transition-all duration-700 shadow-2xl">
                 <img 
-                  // Image path handle karne ke liye logic
-                  src={product.image?.startsWith('http') ? product.image : `${API_BASE_URL}/storage/${product.image}`} 
+                  // FIX: API_BASE_URL se '/api' hata kar root storage path banana
+                  src={
+                    product.image?.startsWith('http') 
+                      ? product.image 
+                      : `${API_BASE_URL.replace('/api', '')}/storage/${product.image}`
+                  } 
                   className="h-full w-full object-cover group-hover:scale-110 transition-transform duration-1000 opacity-90" 
                   alt={product.name}
                   onError={(e: any) => { e.target.src = 'https://placehold.co/400x500?text=No+Image'; }}
