@@ -21,7 +21,7 @@ export default function Hero() {
           muted
           playsInline
           loop
-          className="h-full w-full object-cover opacity-60" // Opacity kam ki taake text pop kare
+          className="h-full w-full object-cover" // Opacity kam ki taake text pop kare
         >
           <source src="videos/bg.mp4" type="video/mp4" />
         </video>
