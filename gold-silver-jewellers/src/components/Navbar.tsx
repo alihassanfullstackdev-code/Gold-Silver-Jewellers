@@ -91,7 +91,7 @@ export default function Navbar() {
               className="flex flex-col items-center"
             >
               <span className="font-serif text-2xl font-bold tracking-[0.4em] text-white md:text-3xl">
-                GS<span className="text-gold">&</span>J
+                SG<span className="text-gold">&</span>J
               </span>
               <div className="h-[1px] w-12 bg-gradient-to-r from-transparent via-gold to-transparent mt-1" />
               <span className="font-sans text-[7px] uppercase tracking-[0.5em] text-gold/60 mt-1 hidden md:block">
