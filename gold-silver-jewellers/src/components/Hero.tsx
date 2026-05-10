@@ -23,7 +23,7 @@ export default function Hero() {
           loop
           className="h-full w-full object-cover opacity-60" // Opacity kam ki taake text pop kare
         >
-          <source src="videos/bg.mp4" type="video/mp4" />
+          <source src="videos/j-bg.webm" type="video/mp4" />
         </video>
         
         {/* Premium Gradient Overlay */}
