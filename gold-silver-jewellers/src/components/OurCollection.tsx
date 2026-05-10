@@ -13,15 +13,21 @@ export default function OurCollection() {
   const navigate = useNavigate();
   const { addToCart } = useCart();
 
+  // API Base URL
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
   useEffect(() => {
-    axios.get('import.meta.env.VITE_API_BASE_URL/products?all=true')
+    // FIX: String concatenation ki jagah Template Literal use kiya
+    axios.get(`${API_BASE_URL}/products?all=true`)
       .then(res => {
-        const data = Array.isArray(res.data) ? res.data : res.data.data;
-        setProducts(data.slice(0, 8));
+        const data = res.data?.data || res.data || [];
+        if (Array.isArray(data)) {
+          setProducts(data.slice(0, 8));
+        }
       })
       .catch(err => console.error("Collection fetch failed", err))
       .finally(() => setLoading(false));
-  }, []);
+  }, [API_BASE_URL]);
 
   const handleQuickAdd = (e: React.MouseEvent, product: any) => {
     e.stopPropagation();
@@ -30,7 +36,7 @@ export default function OurCollection() {
     setTimeout(() => setAddedId(null), 2000);
   };
 
-  if (loading || products.length === 0) return null;
+  if (loading || !products || products.length === 0) return null;
 
   return (
     <section className="bg-[#030303] py-32 border-t border-white/5 relative overflow-hidden">
@@ -76,9 +82,13 @@ export default function OurCollection() {
               {/* Image Container */}
               <div className="relative aspect-[3/4] overflow-hidden bg-[#080808] border border-white/10 group-hover:border-gold/30 transition-all duration-700">
                 <img
-                  src={`${import.meta.env.VITE_API_BASE_URL}/storage/${product.image}`}
+                  // FIX: Storage path logic updated to root URL
+                  src={product.image?.startsWith('http') 
+                    ? product.image 
+                    : `${API_BASE_URL.replace('/api', '')}/storage/${product.image}`}
                   className="w-full h-full object-cover opacity-80 group-hover:opacity-100 group-hover:scale-110 transition-all duration-1000 ease-out"
                   alt={product.name}
+                  onError={(e: any) => { e.target.src = 'https://placehold.co/400x500?text=No+Image'; }}
                 />
                 
                 {/* Subtle Overlay Gradient */}
