@@ -8,12 +8,12 @@ export default function Hero() {
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
-    video.playbackRate = 0.8; // Thoda slow playback mazeed cinematic lagta hai
+    video.playbackRate = 0.8; // Cinematic slow motion
   }, []);
 
   return (
     <section className="relative h-screen w-full overflow-hidden bg-[#030303]">
-      {/* Cinematic Video Background with Dark Overlay */}
+      {/* Cinematic Video Background with Multi-format Support */}
       <div className="absolute inset-0 z-0">
         <video
           ref={videoRef}
@@ -21,9 +21,14 @@ export default function Hero() {
           muted
           playsInline
           loop
-          className="h-full w-full object-cover opacity-60" // Opacity kam ki taake text pop kare
+          // object-cover ensures the video fills the screen width & height without stretching
+          className="h-full w-full object-cover opacity-60"
         >
-          <source src="videos/j-bg.webm" type="video/mp4" />
+          {/* FIX: Priority format (WebM) for performance */}
+          <source src="videos/j-bg.webm" type="video/webm" />
+          {/* FIX: Fallback format (MP4) for Safari/Old Browsers */}
+          <source src="videos/j-bg.mp4" type="video/mp4" />
+          Your browser does not support the video tag.
         </video>
         
         {/* Premium Gradient Overlay */}
@@ -77,7 +82,6 @@ export default function Hero() {
           className="mt-12"
         >
           <button className="group relative flex items-center gap-4 border border-gold/50 bg-transparent px-10 py-4 transition-all duration-500 hover:border-gold">
-            {/* Background Fill on Hover */}
             <div className="absolute inset-0 z-0 bg-gold scale-x-0 transition-transform duration-500 origin-left group-hover:scale-x-100" />
             
             <span className="relative z-10 font-sans text-[11px] font-black uppercase tracking-[0.3em] text-gold transition-colors duration-500 group-hover:text-black">
@@ -88,7 +92,7 @@ export default function Hero() {
         </motion.div>
       </div>
 
-      {/* Scroll Indicator - Redesigned */}
+      {/* Scroll Indicator */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -96,13 +100,13 @@ export default function Hero() {
         className="absolute bottom-12 left-1/2 -translate-x-1/2 flex flex-col items-center gap-4"
       >
          <span className="font-sans text-[9px] uppercase tracking-[0.4em] text-white/40 font-bold rotate-180 [writing-mode:vertical-lr]">
-          Scroll
+           Scroll
         </span>
         <div className="h-16 w-[1px] bg-gradient-to-b from-gold via-gold/20 to-transparent relative overflow-hidden">
           <motion.div 
             animate={{ y: [-64, 64] }}
             transition={{ repeat: Infinity, duration: 2, ease: "linear" }}
-            className="absolute top-0 left-0 w-full h-1/2 bg-white"
+            className="absolute top-0 left-0 w-full h-1/2 bg-white/20"
           />
         </div>
       </motion.div>
