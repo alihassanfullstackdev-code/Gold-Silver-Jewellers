@@ -26,8 +26,8 @@ export default function AboutUs() {
         <div className="absolute inset-0 z-0">
           <img 
             src="/images/about.jpg" 
-            className="w-full h-full object-cover opacity-60 scale-105"
-            alt="The Heritage of GS&J"
+            className="w-full h-full object-cover opacity-100 scale-100"
+            alt="The Heritage of SG&J"
           />
           {/* Gradients to blend the edges and ensure text readability */}
           <div className="absolute inset-0 bg-gradient-to-b from-[#030303]/80 via-transparent to-[#030303]" />
