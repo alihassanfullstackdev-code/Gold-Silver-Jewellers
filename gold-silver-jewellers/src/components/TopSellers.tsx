@@ -96,7 +96,7 @@ export default function TopSellers() {
               <div className={`w-full md:w-[40%] text-center ${index % 2 !== 0 ? 'md:text-right' : 'md:text-left'}`}>
                 <span className="text-gold text-[9px] uppercase tracking-[0.3em] font-bold">Limited Edition</span>
                 <h3 className="font-serif text-3xl md:text-4xl text-white mt-3 mb-4 leading-tight">{product.name}</h3>
-                <p className="text-white/40 text-xs font-light leading-relaxed mb-6 line-clamp-2 italic">
+                <p className="text-white/40 text-xs font-light leading-relaxed mb-6 italic">
                   {product.description || 'A timeless masterpiece crafted with precision and soul.'}
                 </p>
                 
