@@ -9,13 +9,19 @@ interface CartItem {
   image: string;
   metal_type: string;
   fixed_price: number;
+  making_charges: number; // Added this field
   quantity: number;
 }
 
 export default function Cart() {
   const { cartItems, removeFromCart, updateQuantity } = useCart();
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
-  const subtotal = cartItems.reduce((acc: number, item: CartItem) => acc + (Number(item.fixed_price) * item.quantity), 0);
+  // Actual Price calculation: (Fixed + Making) * Quantity
+  const subtotal = cartItems.reduce((acc: number, item: CartItem) => {
+    const actualPrice = Number(item.fixed_price || 0) + Number(item.making_charges || 0);
+    return acc + (actualPrice * item.quantity);
+  }, 0);
 
   return (
     <div className="min-h-screen bg-[#030303] text-white pt-40 pb-20 px-6">
@@ -52,8 +58,15 @@ export default function Cart() {
                     exit={{ opacity: 0, x: -20 }}
                     className="flex gap-6 border-b border-white/5 pb-8 group"
                   >
+                    {/* Updated Image Path Logic */}
                     <div className="w-24 h-32 md:w-32 md:h-40 bg-[#080808] border border-white/10 overflow-hidden">
-                      <img src={`${import.meta.env.VITE_API_BASE_URL}/storage/${item.image}`} className="w-full h-full object-cover" />
+                      <img 
+                        src={item.image?.startsWith('http') 
+                          ? item.image 
+                          : `${API_BASE_URL.replace('/api', '')}/storage/${item.image}`} 
+                        className="w-full h-full object-cover" 
+                        alt={item.name}
+                      />
                     </div>
                     
                     <div className="flex-1 flex flex-col justify-between py-1">
@@ -73,7 +86,10 @@ export default function Cart() {
                           <span className="text-xs font-serif">{item.quantity}</span>
                           <button onClick={() => updateQuantity(item.id, 1)} className="p-1 text-white/40 hover:text-gold"><Plus size={14} /></button>
                         </div>
-                        <p className="font-serif text-gold text-sm md:text-lg">PKR {(Number(item.fixed_price) * item.quantity).toLocaleString()}</p>
+                        <p className="font-serif text-gold text-sm md:text-lg">
+                          {/* ACTUAL PRICE: (Fixed + Making) * Quantity */}
+                          PKR {((Number(item.fixed_price || 0) + Number(item.making_charges || 0)) * item.quantity).toLocaleString()}
+                        </p>
                       </div>
                     </div>
                   </motion.div>
