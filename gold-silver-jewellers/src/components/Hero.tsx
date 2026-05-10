@@ -25,9 +25,9 @@ export default function Hero() {
           className="h-full w-full object-cover opacity-60"
         >
           {/* FIX: Priority format (WebM) for performance */}
-          <source src="videos/j-bg.webm" type="video/webm" />
+          <source src="videos/csj.webm" type="video/webm" />
           {/* FIX: Fallback format (MP4) for Safari/Old Browsers */}
-          <source src="videos/j-bg.mp4" type="video/mp4" />
+          <source src="videos/csj.mp4" type="video/mp4" />
           Your browser does not support the video tag.
         </video>
         
