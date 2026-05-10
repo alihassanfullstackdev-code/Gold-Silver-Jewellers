@@ -21,16 +21,13 @@ export default function Hero() {
           muted
           playsInline
           loop
-          // object-cover ensures the video fills the screen width & height without stretching
+          preload="auto" // Is se video background mein load hogi
           className="h-full w-full object-cover opacity-60"
         >
-          {/* FIX: Priority format (WebM) for performance */}
-          <source src="videos/csj.webm" type="video/webm" />
-          {/* FIX: Fallback format (MP4) for Safari/Old Browsers */}
-          <source src="videos/csj.mp4" type="video/mp4" />
-          Your browser does not support the video tag.
+          <source src="videos/j-bg.webm" type="video/webm" />
+          <source src="videos/j-bg.mp4" type="video/mp4" />
         </video>
-        
+
         {/* Premium Gradient Overlay */}
         <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-transparent to-black" />
         <div className="absolute inset-0 bg-black/20" />
@@ -51,7 +48,7 @@ export default function Hero() {
           </span>
           <div className="h-[1px] w-8 bg-gold/50" />
         </motion.div>
-        
+
         {/* Main Heading with Gold Gradient Text */}
         <motion.h1
           initial={{ opacity: 0, y: 30 }}
@@ -83,18 +80,18 @@ export default function Hero() {
         transition={{ duration: 1, delay: 1.2 }}
         className="absolute bottom-12 left-1/2 -translate-x-1/2 flex flex-col items-center gap-4"
       >
-         <span className="font-sans text-[9px] uppercase tracking-[0.4em] text-white/40 font-bold rotate-180 [writing-mode:vertical-lr]">
-           Scroll
+        <span className="font-sans text-[9px] uppercase tracking-[0.4em] text-white/40 font-bold rotate-180 [writing-mode:vertical-lr]">
+          Scroll
         </span>
         <div className="h-16 w-[1px] bg-gradient-to-b from-gold via-gold/20 to-transparent relative overflow-hidden">
-          <motion.div 
+          <motion.div
             animate={{ y: [-64, 64] }}
             transition={{ repeat: Infinity, duration: 2, ease: "linear" }}
             className="absolute top-0 left-0 w-full h-1/2 bg-white/20"
           />
         </div>
       </motion.div>
-      
+
       {/* Decorative Corners */}
       <div className="absolute top-10 left-10 h-20 w-20 border-t border-l border-gold/20 pointer-events-none hidden md:block" />
       <div className="absolute bottom-10 right-10 h-20 w-20 border-b border-r border-gold/20 pointer-events-none hidden md:block" />
