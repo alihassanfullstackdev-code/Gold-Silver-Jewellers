@@ -17,7 +17,6 @@ export default function OurCollection() {
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
   useEffect(() => {
-    // FIX: String concatenation ki jagah Template Literal use kiya
     axios.get(`${API_BASE_URL}/products?all=true`)
       .then(res => {
         const data = res.data?.data || res.data || [];
@@ -82,7 +81,6 @@ export default function OurCollection() {
               {/* Image Container */}
               <div className="relative aspect-[3/4] overflow-hidden bg-[#080808] border border-white/10 group-hover:border-gold/30 transition-all duration-700">
                 <img
-                  // FIX: Storage path logic updated to root URL
                   src={product.image?.startsWith('http') 
                     ? product.image 
                     : `${API_BASE_URL.replace('/api', '')}/storage/${product.image}`}
@@ -91,10 +89,8 @@ export default function OurCollection() {
                   onError={(e: any) => { e.target.src = 'https://placehold.co/400x500?text=No+Image'; }}
                 />
                 
-                {/* Subtle Overlay Gradient */}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
 
-                {/* Quick Add Button - Appears on Hover */}
                 <div className="absolute inset-0 flex items-end justify-center p-6 translate-y-4 group-hover:translate-y-0 opacity-0 group-hover:opacity-100 transition-all duration-500">
                   <button
                     onClick={(e) => handleQuickAdd(e, product)}
@@ -123,7 +119,8 @@ export default function OurCollection() {
                     {product.metal_type || '22K Gold'}
                   </span>
                   <span className="text-gold font-serif text-sm tracking-tighter">
-                    PKR {Number(product.fixed_price).toLocaleString()}
+                    {/* Fixed Price + Making Charges Logic */}
+                    PKR {(Number(product.fixed_price || 0) + Number(product.making_charges || 0)).toLocaleString()}
                   </span>
                 </div>
               </div>

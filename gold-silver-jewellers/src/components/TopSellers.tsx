@@ -15,10 +15,8 @@ export default function TopSellers() {
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
   useEffect(() => {
-    // FIX: Backticks (`) use karein aur variable ko ${} mein likhein
     axios.get(`${API_BASE_URL}/products?all=true`)
       .then(res => {
-        // Safety check: products array nikalna
         const data = res.data?.data || res.data || [];
         
         if (Array.isArray(data)) {
@@ -38,7 +36,6 @@ export default function TopSellers() {
     setTimeout(() => setAddedId(null), 2000);
   };
 
-  // Content render logic
   if (loading || !products || products.length === 0) return null;
 
   return (
@@ -78,7 +75,6 @@ export default function TopSellers() {
               <div className="w-full md:w-[45%] group relative">
                 <div className="relative aspect-[4/5] overflow-hidden bg-[#080808] border border-white/10 group-hover:border-gold/30 transition-all duration-700">
                   <img 
-                    // FIX: Storage path logic updated
                     src={product.image?.startsWith('http') 
                       ? product.image 
                       : `${API_BASE_URL.replace('/api', '')}/storage/${product.image}`}
@@ -106,7 +102,10 @@ export default function TopSellers() {
                 
                 <div className="space-y-6">
                   <div className={`flex flex-col ${index % 2 !== 0 ? 'items-end' : 'items-start'}`}>
-                    <span className="text-2xl text-white font-serif mb-1">PKR {Number(product.fixed_price).toLocaleString()}</span>
+                    <span className="text-2xl text-white font-serif mb-1">
+                      {/* FIXED: Fixed Price + Making Charges */}
+                      PKR {(Number(product.fixed_price || 0) + Number(product.making_charges || 0)).toLocaleString()}
+                    </span>
                     <span className="text-[8px] text-white/20 uppercase tracking-widest">Premium Collection</span>
                   </div>
 
