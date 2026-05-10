@@ -77,7 +77,7 @@ function MainApp() {
        - Text: Champagne Pearl (#FAFAFA)
        - Selection: Champagne Gold (#E5C787)
     */
-    <main className="min-h-screen bg-[#524600] text-[#FAFAFA] selection:bg-[#D4AF37] selection:text-[#050505] transition-opacity duration-700">
+    <main className="min-h-screen bg-[#050505] text-[#FAFAFA] selection:bg-[#E5C787] selection:text-[#050505] transition-opacity duration-700">
 
       <AnimatePresence mode="wait">
         {isLoading && <Loader onComplete={() => setIsLoading(false)} />}
