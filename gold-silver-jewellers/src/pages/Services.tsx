@@ -45,24 +45,16 @@ export default function Services() {
 
       <div className="relative z-10 pt-44 pb-32 max-w-7xl mx-auto px-6">
         <div className="text-center mb-20 space-y-4">
-          <motion.span 
-            initial={{ y: 10, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            className="text-[10px] uppercase tracking-[0.8em] text-gold font-black drop-shadow-md"
-          >
-            Artisan Care
-          </motion.span>
+          
           <motion.h1 
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.2 }}
             className="font-serif text-5xl md:text-7xl uppercase tracking-tighter drop-shadow-xl"
           >
-            Our <span className="italic text-gold">Services.</span>
+            Our <span className="italic text-gold">Services</span>
           </motion.h1>
-          <p className="text-white uppercase tracking-[0.3em] text-[9px] max-w-md mx-auto leading-relaxed drop-shadow-md bg-black/20 backdrop-blur-sm py-2 px-4 rounded-full">
-            From bespoke creations to expert restoration, we provide comprehensive jewelry solutions.
-          </p>
+          
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
