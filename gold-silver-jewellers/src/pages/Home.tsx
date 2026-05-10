@@ -30,7 +30,7 @@ export default function Home() {
       </section>
 
       {/* --- ADDED SERVICES HIGHLIGHT HERE --- */}
-      <ServicesHighlight />
+      {/* <ServicesHighlight /> */}
 
       {/* 3. Featured Collection */}
       <section id="collection">
