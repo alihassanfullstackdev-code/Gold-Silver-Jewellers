@@ -13,7 +13,7 @@ export default function Footer() {
           {/* 1. Brand Identity */}
           <div className="space-y-6 text-center md:text-left">
             <h2 className="font-serif text-3xl tracking-[0.3em] text-white">
-              GS<span className="text-gold">&</span>J
+              SG<span className="text-gold">&</span>J
             </h2>
             <p className="text-white/30 text-[10px] leading-relaxed tracking-[0.2em] uppercase max-w-xs mx-auto md:mx-0">
               Pioneers of timeless jewelry, crafting stories that define legacies since 1992.
@@ -26,17 +26,17 @@ export default function Footer() {
             <ul className="space-y-4">
               <li>
                 <Link to="/collections" className="text-white/40 text-[10px] uppercase tracking-[0.2em] hover:text-gold transition-all duration-300">
-                  The Collection
+                  Our Collection
                 </Link>
               </li>
               <li>
                 <Link to="/about" className="text-white/40 text-[10px] uppercase tracking-[0.2em] hover:text-gold transition-all duration-300">
-                  Our Heritage
+                  About US
                 </Link>
               </li>
               <li>
                 <Link to="/contact" className="text-white/40 text-[10px] uppercase tracking-[0.2em] hover:text-gold transition-all duration-300">
-                  Bespoke Inquiries
+                  Contact Us
                 </Link>
               </li>
             </ul>
@@ -62,7 +62,7 @@ export default function Footer() {
             <div className="flex items-center justify-center md:justify-start space-x-3 text-white/30 group cursor-pointer">
               <Mail size={14} className="text-gold" />
               <span className="text-[10px] tracking-[0.2em] uppercase group-hover:text-white transition-colors">
-                info@gsjjewellers.com
+                info@sgjjewellers.com
               </span>
             </div>
           </div>

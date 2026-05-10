@@ -82,14 +82,6 @@ export default function Hero() {
           transition={{ duration: 0.8, delay: 0.7 }}
           className="mt-12"
         >
-          <button className="group relative flex items-center gap-4 border border-gold/50 bg-black/30 backdrop-blur-sm px-10 py-4 transition-all duration-500 hover:border-gold">
-            <div className="absolute inset-0 z-0 bg-gold scale-x-0 transition-transform duration-500 origin-left group-hover:scale-x-100" />
-            
-            <span className="relative z-10 font-sans text-[11px] font-black uppercase tracking-[0.3em] text-gold transition-colors duration-500 group-hover:text-black">
-              Explore Collection
-            </span>
-            <ArrowRight className="relative z-10 h-4 w-4 text-gold transition-all duration-500 group-hover:text-black group-hover:translate-x-2" />
-          </button>
         </motion.div>
       </div>
 
