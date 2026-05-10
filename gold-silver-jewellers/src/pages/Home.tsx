@@ -3,7 +3,7 @@ import ProductSection from '../components/ProductSection.tsx';
 import { motion } from 'framer-motion';
 import TopSellers from '../components/TopSellers.tsx';
 import OurCollection from '../components/OurCollection.tsx';
-import ServicesHighlight from '../components/ServicesHighlight.tsx'; // Naya component import karein
+import ServicesHighlight from '../components/ServicesHighlight.tsx'; 
 
 export default function Home() {
   return (

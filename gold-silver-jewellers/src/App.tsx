@@ -10,20 +10,21 @@ import { BrowserRouter, Routes, Route, useLocation, Navigate } from 'react-route
 import axios from 'axios';
 
 // Context Import
-import { CartProvider, useCart } from './context/CartContext'; // useCart bhi import karein
+import { CartProvider, useCart } from './context/CartContext'; 
 
 // Components & Pages
 import Loader from './components/Loader';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
-import CartDrawer from './components/CartDrawer'; // Naya Drawer Component
+import CartDrawer from './components/CartDrawer'; 
 import { Home, Collections, Services, AboutUs, ContactUs, Login, AdminDashboard } from './pages';
 import LiveRates from './pages/LiveRates/LiveRates';
 import Categories from './pages/Categories/Categories';
 import Products from './pages/Products/Products';
 import CartPage from './components/Cart'; 
 
-const API_URL = 'import.meta.env.VITE_API_BASE_URL';
+// Fixed API URL Syntax
+const API_URL = import.meta.env.VITE_API_BASE_URL;
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const token = localStorage.getItem('admin_token');
@@ -40,8 +41,6 @@ function ScrollToTop() {
 function MainApp() {
   const [isLoading, setIsLoading] = useState(true);
   const location = useLocation();
-  
-  // Drawer state context se lein
   const { isDrawerOpen, setIsDrawerOpen } = useCart();
 
   const isAdminPage = location.pathname.startsWith('/admin') || location.pathname === '/login';
@@ -73,7 +72,8 @@ function MainApp() {
   }, [isLoading]);
 
   return (
-    <main className="min-h-screen bg-[#030303] text-slate-100 selection:bg-gold selection:text-black transition-opacity duration-700">
+    /* THEME UPDATE: Pure Black Background & Premium Gold Selection */
+    <main className="min-h-screen bg-[#000000] text-[#f8f5f0] selection:bg-[#D4AF37] selection:text-black transition-opacity duration-700">
 
       <AnimatePresence mode="wait">
         {isLoading && <Loader onComplete={() => setIsLoading(false)} />}
@@ -81,7 +81,6 @@ function MainApp() {
 
       <ScrollToTop />
 
-      {/* Cart Drawer - Hamesha top level par rahay ga */}
       <CartDrawer isOpen={isDrawerOpen} onClose={() => setIsDrawerOpen(false)} />
 
       <div className={isLoading ? 'invisible' : 'visible'}>
@@ -108,9 +107,14 @@ function MainApp() {
         {!isAdminPage && <Footer />}
       </div>
 
-      <div className="pointer-events-none fixed inset-0 z-[-1] opacity-40">
-        <div className="absolute left-[5%] top-[10%] h-[600px] w-[600px] rounded-full bg-gold/10 blur-[150px]" />
-        <div className="absolute right-[5%] bottom-[10%] h-[700px] w-[700px] rounded-full bg-gold/5 blur-[180px]" />
+      {/* THEME UPDATE: Soft Ambient Glow (Gold Accents) */}
+      <div className="pointer-events-none fixed inset-0 z-[-1] overflow-hidden">
+        {/* Top Left Gold Orb */}
+        <div className="absolute left-[-10%] top-[-10%] h-[600px] w-[600px] rounded-full bg-[#D4AF37]/5 blur-[120px]" />
+        {/* Bottom Right Gold Orb */}
+        <div className="absolute right-[-5%] bottom-[-5%] h-[700px] w-[700px] rounded-full bg-[#D4AF37]/3 blur-[150px]" />
+        {/* Center Grain Effect (Optional - add a tiny grain png if you want more texture) */}
+        <div className="absolute inset-0 bg-[url('/grain.png')] opacity-[0.03] mix-blend-overlay" />
       </div>
     </main>
   );

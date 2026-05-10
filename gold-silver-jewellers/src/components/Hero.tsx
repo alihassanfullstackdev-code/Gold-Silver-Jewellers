@@ -8,7 +8,7 @@ export default function Hero() {
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
-    video.playbackRate = 0.8; // Thoda slow playback mazeed cinematic lagta hai
+    video.playbackRate = 0.8;
   }, []);
 
   return (
