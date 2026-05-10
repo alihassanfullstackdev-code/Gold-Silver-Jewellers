@@ -2,11 +2,26 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useCart } from '../context/CartContext';
 import { X, Trash2, Plus, Minus, ShoppingBag, ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { Key, ReactElement, JSXElementConstructor, ReactNode, ReactPortal } from 'react';
+
+interface CartItem {
+  id: number;
+  name: string;
+  image: string;
+  metal_type?: string;
+  fixed_price: number;
+  making_charges: number;
+  quantity: number;
+}
 
 export default function CartDrawer({ isOpen, onClose }: { isOpen: boolean, onClose: () => void }) {
   const { cartItems, removeFromCart, updateQuantity } = useCart();
-  const subtotal = cartItems.reduce((acc: number, item: { fixed_price: any; quantity: number; }) => acc + (Number(item.fixed_price) * item.quantity), 0);
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
+  // Actual Price calculation: (Fixed + Making) * Quantity
+  const subtotal = cartItems.reduce((acc: number, item: CartItem) => {
+    const actualPrice = Number(item.fixed_price || 0) + Number(item.making_charges || 0);
+    return acc + (actualPrice * item.quantity);
+  }, 0);
 
   return (
     <AnimatePresence>
@@ -24,7 +39,8 @@ export default function CartDrawer({ isOpen, onClose }: { isOpen: boolean, onClo
           {/* Drawer */}
           <motion.div
             initial={{ x: '100%' }}
-            animate={{ x: 0 }} exit={{ x: '100%' }}
+            animate={{ x: 0 }} 
+            exit={{ x: '100%' }}
             transition={{ type: 'spring', damping: 25, stiffness: 200 }}
             className="fixed right-0 top-0 h-full w-full max-w-[450px] bg-[#0a0a0a] border-l border-gold/10 z-[2100] flex flex-col shadow-2xl"
           >
@@ -47,10 +63,17 @@ export default function CartDrawer({ isOpen, onClose }: { isOpen: boolean, onClo
                   <p className="font-serif italic text-xl tracking-widest text-center">Your collection is empty.</p>
                 </div>
               ) : (
-                cartItems.map((item: { id: Key | null | undefined; image: any; name: string | number | bigint | boolean | ReactElement<unknown, string | JSXElementConstructor<any>> | Iterable<ReactNode> | ReactPortal | Promise<string | number | bigint | boolean | ReactPortal | ReactElement<unknown, string | JSXElementConstructor<any>> | Iterable<ReactNode> | null | undefined> | null | undefined; fixed_price: any; quantity: string | number | bigint | boolean | ReactElement<unknown, string | JSXElementConstructor<any>> | Iterable<ReactNode> | ReactPortal | Promise<string | number | bigint | boolean | ReactPortal | ReactElement<unknown, string | JSXElementConstructor<any>> | Iterable<ReactNode> | null | undefined> | null | undefined; }) => (
+                cartItems.map((item: CartItem) => (
                   <div key={item.id} className="flex gap-6 group relative">
+                    {/* Updated Image Path Logic */}
                     <div className="w-24 h-28 bg-white/5 border border-white/10 overflow-hidden shrink-0">
-                      <img src={`${import.meta.env.VITE_API_BASE_URL}/storage/${item.image}`} className="w-full h-full object-cover" />
+                      <img 
+                        src={item.image?.startsWith('http') 
+                          ? item.image 
+                          : `${API_BASE_URL.replace('/api', '')}/storage/${item.image}`} 
+                        className="w-full h-full object-cover" 
+                        alt={item.name}
+                      />
                     </div>
                     <div className="flex-1 flex flex-col justify-between">
                       <div>
@@ -60,7 +83,10 @@ export default function CartDrawer({ isOpen, onClose }: { isOpen: boolean, onClo
                             <Trash2 size={16} />
                           </button>
                         </div>
-                        <p className="text-gold font-serif text-xs mt-1">PKR {Number(item.fixed_price).toLocaleString()}</p>
+                        {/* Show Total Price for Single Item */}
+                        <p className="text-gold font-serif text-xs mt-1">
+                          PKR {(Number(item.fixed_price || 0) + Number(item.making_charges || 0)).toLocaleString()}
+                        </p>
                       </div>
                       
                       <div className="flex items-center space-x-4 border border-white/10 w-fit px-3 py-1 mt-4">
