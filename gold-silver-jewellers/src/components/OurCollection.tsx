@@ -54,15 +54,13 @@ export default function OurCollection() {
           >
             <div className="flex items-center justify-center gap-3 mb-6">
               <div className="h-[1px] w-8 bg-gold/40" />
-              <span className="font-sans text-[10px] uppercase tracking-[0.8em] text-gold font-black">
-                Curated Selection
-              </span>
+              <h2 className="font-serif text-5xl md:text-7xl text-white tracking-tighter uppercase">
+              Our <span className="italic text-gold lowercase">Collection</span>
+              </h2>
               <div className="h-[1px] w-8 bg-gold/40" />
             </div>
 
-            <h2 className="font-serif text-5xl md:text-7xl text-white tracking-tighter uppercase">
-              Our <span className="italic text-gold lowercase">Collection</span>
-            </h2>
+            
           </motion.div>
         </div>
 

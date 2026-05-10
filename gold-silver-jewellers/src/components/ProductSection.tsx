@@ -61,12 +61,12 @@ export default function ProductSection({ title, subtitle, filterType }: Props) {
         <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
           <div className="flex items-center justify-center gap-3 mb-4">
             <div className="h-[1px] w-6 bg-gold/50" />
-            <span className="font-sans text-[10px] uppercase tracking-[0.6em] text-gold font-black">{subtitle}</span>
+            <h2 className="font-serif text-5xl md:text-6xl text-white tracking-tight">
+            {title.split(' ')[0]} <span className="italic text-gold">{title.split(' ').slice(1).join(' ')}</span>
+            </h2>
             <div className="h-[1px] w-6 bg-gold/50" />
           </div>
-          <h2 className="font-serif text-5xl md:text-6xl text-white tracking-tight">
-            {title.split(' ')[0]} <span className="italic text-gold">{title.split(' ').slice(1).join(' ')}</span>
-          </h2>
+          
         </motion.div>
       </div>
 
