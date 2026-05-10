@@ -49,15 +49,13 @@ export default function TopSellers() {
         >
           <div className="flex items-center justify-center gap-3 mb-4">
             <div className="h-[1px] w-6 bg-gold/50" />
-            <span className="font-sans text-[10px] uppercase tracking-[0.6em] text-gold font-black">
-              Most Coveted
-            </span>
+            <h2 className="font-serif text-5xl md:text-6xl text-white tracking-tight uppercase">
+            Top <span className="italic text-gold lowercase">Sellers</span>
+            </h2>
             <div className="h-[1px] w-6 bg-gold/50" />
           </div>
 
-          <h2 className="font-serif text-5xl md:text-6xl text-white tracking-tight uppercase">
-            Top <span className="italic text-gold lowercase">Sellers</span>
-          </h2>
+          
         </motion.div>
       </div>
 
