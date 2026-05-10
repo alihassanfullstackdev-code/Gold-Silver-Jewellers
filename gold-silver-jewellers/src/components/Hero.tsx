@@ -84,26 +84,6 @@ export default function Hero() {
         >
         </motion.div>
       </div>
-
-      {/* Scroll Indicator */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 1, delay: 1.2 }}
-        className="absolute bottom-12 left-1/2 -translate-x-1/2 flex flex-col items-center gap-4"
-      >
-         <span className="font-sans text-[9px] uppercase tracking-[0.4em] text-white font-bold rotate-180 [writing-mode:vertical-lr] drop-shadow">
-           Scroll
-        </span>
-        <div className="h-16 w-[1px] bg-gradient-to-b from-gold via-gold/20 to-transparent relative overflow-hidden">
-          <motion.div 
-            animate={{ y: [-64, 64] }}
-            transition={{ repeat: Infinity, duration: 2, ease: "linear" }}
-            className="absolute top-0 left-0 w-full h-1/2 bg-white"
-          />
-        </div>
-      </motion.div>
-      
       {/* Decorative Corners */}
       <div className="absolute top-10 left-10 h-20 w-20 border-t border-l border-gold/30 pointer-events-none hidden md:block" />
       <div className="absolute bottom-10 right-10 h-20 w-20 border-b border-r border-gold/30 pointer-events-none hidden md:block" />
