@@ -11,16 +11,26 @@ export default function TopSellers() {
   
   const { addToCart } = useCart();
 
+  // API Base URL handle karne ke liye
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
   useEffect(() => {
-    axios.get('import.meta.env.VITE_API_BASE_URL/products?all=true')
+    // FIX: Backticks (`) use karein aur variable ko ${} mein likhein
+    axios.get(`${API_BASE_URL}/products?all=true`)
       .then(res => {
-        const data = Array.isArray(res.data) ? res.data : res.data.data;
-        const filtered = data.filter((p: any) => p.is_top_seller === 1 || p.is_top_seller === true);
-        setProducts(filtered.slice(0, 4));
+        // Safety check: products array nikalna
+        const data = res.data?.data || res.data || [];
+        
+        if (Array.isArray(data)) {
+          const filtered = data.filter((p: any) => 
+            p && (p.is_top_seller === 1 || p.is_top_seller === true || p.is_top_seller === "1")
+          );
+          setProducts(filtered.slice(0, 4));
+        }
       })
       .catch(err => console.error("Top Sellers fetch failed", err))
       .finally(() => setLoading(false));
-  }, []);
+  }, [API_BASE_URL]);
 
   const handleAddToCart = (product: any) => {
     addToCart(product);
@@ -28,35 +38,33 @@ export default function TopSellers() {
     setTimeout(() => setAddedId(null), 2000);
   };
 
-  if (loading || products.length === 0) return null;
+  // Content render logic
+  if (loading || !products || products.length === 0) return null;
 
   return (
     <section className="bg-[#030303] py-24 border-t border-white/5 relative">
       <div className="max-w-7xl mx-auto px-4 mb-16 text-center relative z-10">
         <motion.div 
-    initial={{ opacity: 0, y: 20 }} 
-    whileInView={{ opacity: 1, y: 0 }} 
-    viewport={{ once: true }}
-    transition={{ duration: 0.6 }}
-  >
-    {/* Subtitle with Horizontal Lines */}
-    <div className="flex items-center justify-center gap-3 mb-4">
-      <div className="h-[1px] w-6 bg-gold/50" />
-      <span className="font-sans text-[10px] uppercase tracking-[0.6em] text-gold font-black">
-        Most Coveted
-      </span>
-      <div className="h-[1px] w-6 bg-gold/50" />
-    </div>
+          initial={{ opacity: 0, y: 20 }} 
+          whileInView={{ opacity: 1, y: 0 }} 
+          viewport={{ once: true }}
+          transition={{ duration: 0.6 }}
+        >
+          <div className="flex items-center justify-center gap-3 mb-4">
+            <div className="h-[1px] w-6 bg-gold/50" />
+            <span className="font-sans text-[10px] uppercase tracking-[0.6em] text-gold font-black">
+              Most Coveted
+            </span>
+            <div className="h-[1px] w-6 bg-gold/50" />
+          </div>
 
-    {/* Dynamic Heading with Italic Gold Span */}
-    <h2 className="font-serif text-5xl md:text-6xl text-white tracking-tight uppercase">
-      Top <span className="italic text-gold lowercase">Sellers</span>
-    </h2>
-  </motion.div>
+          <h2 className="font-serif text-5xl md:text-6xl text-white tracking-tight uppercase">
+            Top <span className="italic text-gold lowercase">Sellers</span>
+          </h2>
+        </motion.div>
       </div>
 
       <div className="max-w-7xl mx-auto px-4">
-        {/* Space-y-32 se gap thora kam kiya hai */}
         <div className="space-y-32">
           {products.map((product, index) => (
             <motion.div 
@@ -67,13 +75,16 @@ export default function TopSellers() {
               transition={{ duration: 0.8 }}
               className={`flex flex-col md:flex-row items-center gap-12 md:gap-20 ${index % 2 !== 0 ? 'md:flex-row-reverse' : ''}`}
             >
-              {/* Image Side - Width 45% taake card chota lage */}
               <div className="w-full md:w-[45%] group relative">
                 <div className="relative aspect-[4/5] overflow-hidden bg-[#080808] border border-white/10 group-hover:border-gold/30 transition-all duration-700">
                   <img 
-                    src={`${import.meta.env.VITE_API_BASE_URL}/storage/${product.image}`}
+                    // FIX: Storage path logic updated
+                    src={product.image?.startsWith('http') 
+                      ? product.image 
+                      : `${API_BASE_URL.replace('/api', '')}/storage/${product.image}`}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-1000" 
                     alt={product.name} 
+                    onError={(e: any) => { e.target.src = 'https://placehold.co/400x500?text=No+Image'; }}
                   />
                   <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex items-center justify-center">
                      <button 
@@ -86,7 +97,6 @@ export default function TopSellers() {
                 </div>
               </div>
 
-              {/* Content Side - Width 40% aur font sizes thore compress kiye hain */}
               <div className={`w-full md:w-[40%] text-center ${index % 2 !== 0 ? 'md:text-right' : 'md:text-left'}`}>
                 <span className="text-gold text-[9px] uppercase tracking-[0.3em] font-bold">Limited Edition</span>
                 <h3 className="font-serif text-3xl md:text-4xl text-white mt-3 mb-4 leading-tight">{product.name}</h3>
