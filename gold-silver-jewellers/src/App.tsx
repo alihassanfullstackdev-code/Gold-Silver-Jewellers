@@ -23,7 +23,7 @@ import Categories from './pages/Categories/Categories';
 import Products from './pages/Products/Products';
 import CartPage from './components/Cart'; 
 
-// Fixed API URL Syntax
+// API URL from env
 const API_URL = import.meta.env.VITE_API_BASE_URL;
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -72,8 +72,12 @@ function MainApp() {
   }, [isLoading]);
 
   return (
-    /* THEME UPDATE: Pure Black Background & Premium Gold Selection */
-    <main className="min-h-screen bg-[#000000] text-[#f8f5f0] selection:bg-[#D4AF37] selection:text-black transition-opacity duration-700">
+    /* THEME UPDATE: 
+       - Background: Rich Obsidian Black (#050505)
+       - Text: Champagne Pearl (#FAFAFA)
+       - Selection: Champagne Gold (#E5C787)
+    */
+    <main className="min-h-screen bg-[#050505] text-[#FAFAFA] selection:bg-[#E5C787] selection:text-[#050505] transition-opacity duration-700">
 
       <AnimatePresence mode="wait">
         {isLoading && <Loader onComplete={() => setIsLoading(false)} />}
@@ -107,14 +111,16 @@ function MainApp() {
         {!isAdminPage && <Footer />}
       </div>
 
-      {/* THEME UPDATE: Soft Ambient Glow (Gold Accents) */}
+      {/* THEME UPDATE: Aesthetic Champagne Gold Ambient Glow */}
       <div className="pointer-events-none fixed inset-0 z-[-1] overflow-hidden">
-        {/* Top Left Gold Orb */}
-        <div className="absolute left-[-10%] top-[-10%] h-[600px] w-[600px] rounded-full bg-[#D4AF37]/5 blur-[120px]" />
-        {/* Bottom Right Gold Orb */}
-        <div className="absolute right-[-5%] bottom-[-5%] h-[700px] w-[700px] rounded-full bg-[#D4AF37]/3 blur-[150px]" />
-        {/* Center Grain Effect (Optional - add a tiny grain png if you want more texture) */}
-        <div className="absolute inset-0 bg-[url('/grain.png')] opacity-[0.03] mix-blend-overlay" />
+        {/* Soft Top Left Glow */}
+        <div className="absolute left-[-5%] top-[-5%] h-[500px] w-[500px] rounded-full bg-[#E5C787]/5 blur-[100px]" />
+        
+        {/* Deep Bottom Right Glow */}
+        <div className="absolute right-[-2%] bottom-[-2%] h-[600px] w-[600px] rounded-full bg-[#E5C787]/3 blur-[130px]" />
+        
+        {/* Subtle Luxury Texture (Grain) */}
+        <div className="absolute inset-0 bg-[url('/grain.png')] opacity-[0.02] mix-blend-overlay" />
       </div>
     </main>
   );
