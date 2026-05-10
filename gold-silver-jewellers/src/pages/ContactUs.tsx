@@ -25,13 +25,6 @@ export default function ContactUs() {
       <div className="relative z-10 max-w-7xl mx-auto px-6 pt-44 pb-32">
         {/* Header */}
         <div className="mb-24 text-center lg:text-center">
-          <motion.span 
-            initial={{ y: 20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            className="text uppercase tracking-[0.8em] text-gold font-black"
-          >
-            Inquiries
-          </motion.span>
           <motion.h1 
             initial={{ y: 30, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}

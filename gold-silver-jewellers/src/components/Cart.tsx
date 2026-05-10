@@ -28,7 +28,7 @@ export default function Cart() {
       <div className="max-w-5xl mx-auto">
         <header className="mb-16 border-b border-white/5 pb-8 flex justify-between items-end">
           <div>
-            <span className="text-[10px] uppercase tracking-[0.5em] text-gold font-bold">Your Selection</span>
+            {/* <span className="text-[10px] uppercase tracking-[0.5em] text-gold font-bold">Your Selection</span> */}
             <h1 className="font-serif text-5xl md:text-7xl mt-4">The <span className="italic text-gold">Cart</span></h1>
           </div>
           <p className="text-white/40 text-xs tracking-widest uppercase">{cartItems.length} Items</p>
@@ -39,7 +39,7 @@ export default function Cart() {
             <div className="flex justify-center text-white/10">
               <ShoppingBag size={100} strokeWidth={0.5} />
             </div>
-            <p className="font-serif italic text-white/30 text-2xl tracking-widest">Your vault is currently empty.</p>
+            <p className="font-serif italic text-white/30 text-2xl tracking-widest">Your cart is empty.</p>
             <Link to="/collections" className="inline-block px-12 py-4 border border-gold text-gold text-[10px] uppercase tracking-[0.3em] hover:bg-gold hover:text-black transition-all duration-500 font-bold">
               Explore Collections
             </Link>
