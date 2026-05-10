@@ -60,7 +60,7 @@ export default function Loader({ onComplete }: LoaderProps) {
             transition={{ duration: 0.8, delay: 0.3 }}
             className="font-serif text-2xl italic tracking-[0.2em] text-gold"
           >
-            GoldSilver <span className="text-white">& Jewellers</span>
+            SilverGold <span className="text-white">& Jewellers</span>
           </motion.h2>
         </div>
 
