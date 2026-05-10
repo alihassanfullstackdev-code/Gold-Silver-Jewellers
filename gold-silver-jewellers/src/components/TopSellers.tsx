@@ -120,9 +120,9 @@ export default function TopSellers() {
                       )}
                     </button>
 
-                    <button className="px-6 py-3 border border-white/10 text-white text-[9px] font-bold uppercase tracking-[0.2em] hover:border-gold transition-all duration-500 flex items-center justify-center gap-2">
+                    {/* <button className="px-6 py-3 border border-white/10 text-white text-[9px] font-bold uppercase tracking-[0.2em] hover:border-gold transition-all duration-500 flex items-center justify-center gap-2">
                       Details <ArrowRight size={12} />
-                    </button>
+                    </button> */}
                   </div>
                 </div>
               </div>
