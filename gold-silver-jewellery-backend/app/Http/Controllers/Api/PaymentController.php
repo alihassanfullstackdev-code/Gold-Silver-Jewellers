@@ -18,7 +18,7 @@ class PaymentController extends Controller
 
         try {
             // "universal-checkout" class ko manually resolve karna (Error fix karne ke liye)
-            $bSecure = app('universal-checkout');
+            $bSecure = app('universalcheckout');
 
             $order = $bSecure->createOrder([
                 'order_id'       => 'GSJ-' . uniqid(),
@@ -45,7 +45,7 @@ class PaymentController extends Controller
     public function verifyPayment(Request $request)
     {
         try {
-            $bSecure = app('universal-checkout');
+            $bSecure = app('universalcheckout');
             $status = $bSecure->verifyOrder($request->all());
 
             if ($status->isSuccess()) {
