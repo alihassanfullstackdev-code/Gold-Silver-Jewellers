@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "e0e27996cb04c1d79c95a9510e388487",
+    "content-hash": "d57f659a96f77ad6156c1d1175109495",
     "packages": [
         {
             "name": "blade-ui-kit/blade-heroicons",
@@ -215,6 +215,75 @@
                 }
             ],
             "time": "2026-02-10T14:33:43+00:00"
+        },
+        {
+            "name": "bsecure/bsecure-laravel",
+            "version": "1.0.5",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/bSecureCheckout/bsecure-laravel.git",
+                "reference": "5fe75de38e292fefa95021200aab8a72cf6a272b"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/bSecureCheckout/bsecure-laravel/zipball/5fe75de38e292fefa95021200aab8a72cf6a272b",
+                "reference": "5fe75de38e292fefa95021200aab8a72cf6a272b",
+                "shasum": ""
+            },
+            "require": {
+                "guzzlehttp/guzzle": "^7.1@dev",
+                "php": ">=5.6"
+            },
+            "suggest": {
+                "guzzlehttp/guzzle": "Required to use the bSecure checkout and sso facade and call bSecure server (7.1@dev)."
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "aliases": {
+                        "BsecureSSO": "bSecure\\UniversalCheckout\\SSOFacade",
+                        "BsecureCheckout": "bSecure\\UniversalCheckout\\CheckoutFacade"
+                    },
+                    "providers": [
+                        "bSecure\\UniversalCheckout\\CheckoutServiceProvider",
+                        "bSecure\\UniversalCheckout\\SSOServiceProvider"
+                    ]
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "bSecure\\UniversalCheckout\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "bSecure",
+                    "email": "tech@bsecure.pk"
+                }
+            ],
+            "description": "Pakistan's first universal checkout solution for e-commerce stores built on woocommerce, magento, shopify and more",
+            "homepage": "https://github.com/bSecureCheckout/bsecure-laravel",
+            "keywords": [
+                "SSO",
+                "bsecure",
+                "e-commerce",
+                "ecommerce",
+                "frictionless payment",
+                "payment-gateway",
+                "single-sign-on",
+                "two-step-checkout",
+                "universal-checkout",
+                "universal-login"
+            ],
+            "support": {
+                "issues": "https://github.com/bSecureCheckout/bsecure-laravel/issues",
+                "source": "https://github.com/bSecureCheckout/bsecure-laravel/tree/1.0.5"
+            },
+            "time": "2021-04-06T11:18:07+00:00"
         },
         {
             "name": "carbonphp/carbon-doctrine-types",
