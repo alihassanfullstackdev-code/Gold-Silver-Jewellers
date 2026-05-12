@@ -1,7 +1,9 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { useCart } from '../context/CartContext';
-import { X, Trash2, Plus, Minus, ShoppingBag, ArrowRight } from 'lucide-react';
+import { X, Trash2, Plus, Minus, ShoppingBag, ArrowRight, Loader2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useState } from 'react';
+import axios from 'axios';
 
 interface CartItem {
   id: number;
@@ -15,6 +17,7 @@ interface CartItem {
 
 export default function CartDrawer({ isOpen, onClose }: { isOpen: boolean, onClose: () => void }) {
   const { cartItems, removeFromCart, updateQuantity } = useCart();
+  const [loading, setLoading] = useState(false);
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
   // Actual Price calculation: (Fixed + Making) * Quantity
@@ -22,6 +25,34 @@ export default function CartDrawer({ isOpen, onClose }: { isOpen: boolean, onClo
     const actualPrice = Number(item.fixed_price || 0) + Number(item.making_charges || 0);
     return acc + (actualPrice * item.quantity);
   }, 0);
+
+  // --- BSECURE CHECKOUT LOGIC ---
+  const handleCheckout = async () => {
+    if (cartItems.length === 0) return;
+    
+    setLoading(true);
+    try {
+      // Backend API call with full cart data
+      const response = await axios.post(`${API_BASE_URL}/payment/initiate`, {
+        total: subtotal,
+        email: "customer@gmail.com", // Dynamic karsaktay hain bad mein
+        name: "Valued Customer",
+        phone: "923001234567",
+        cart: cartItems // Quantity aur images handle karnay ke liye
+      });
+
+      if (response.data.success && response.data.checkout_url) {
+        window.location.href = response.data.checkout_url;
+      } else {
+        alert("Checkout Error: " + (response.data.message || "Failed to connect."));
+      }
+    } catch (error: any) {
+      console.error("API Error:", error);
+      alert(error.response?.data?.message || "Server Error. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <AnimatePresence>
@@ -65,13 +96,12 @@ export default function CartDrawer({ isOpen, onClose }: { isOpen: boolean, onClo
               ) : (
                 cartItems.map((item: CartItem) => (
                   <div key={item.id} className="flex gap-6 group relative">
-                    {/* Updated Image Path Logic */}
                     <div className="w-24 h-28 bg-white/5 border border-white/10 overflow-hidden shrink-0">
                       <img 
                         src={item.image?.startsWith('http') 
                           ? item.image 
                           : `${API_BASE_URL.replace('/api', '')}/storage/${item.image}`} 
-                        className="w-full h-full object-cover" 
+                        className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500" 
                         alt={item.name}
                       />
                     </div>
@@ -83,7 +113,6 @@ export default function CartDrawer({ isOpen, onClose }: { isOpen: boolean, onClo
                             <Trash2 size={16} />
                           </button>
                         </div>
-                        {/* Show Total Price for Single Item */}
                         <p className="text-gold font-serif text-xs mt-1">
                           PKR {(Number(item.fixed_price || 0) + Number(item.making_charges || 0)).toLocaleString()}
                         </p>
@@ -107,9 +136,23 @@ export default function CartDrawer({ isOpen, onClose }: { isOpen: boolean, onClo
                   <span className="text-[10px] uppercase tracking-[0.4em] text-white/40">Vault Subtotal</span>
                   <span className="text-2xl font-serif text-gold">PKR {subtotal.toLocaleString()}</span>
                 </div>
-                <button className="w-full py-5 bg-gold text-black font-black text-[10px] uppercase tracking-[0.4em] hover:bg-white transition-all duration-500">
-                  Proceed to Checkout
+                
+                {/* CHECKOUT BUTTON */}
+                <button 
+                  onClick={handleCheckout}
+                  disabled={loading}
+                  className="w-full py-5 bg-gold text-black font-black text-[10px] uppercase tracking-[0.4em] hover:bg-white transition-all duration-500 flex justify-center items-center gap-3 disabled:opacity-50"
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 size={16} className="animate-spin" />
+                      Opening Vault...
+                    </>
+                  ) : (
+                    "Proceed to Checkout"
+                  )}
                 </button>
+
                 <Link to="/cart" onClick={onClose} className="flex items-center justify-center gap-2 text-[9px] uppercase tracking-[0.2em] text-white/30 hover:text-gold transition-colors">
                   View Full Details <ArrowRight size={12} />
                 </Link>
