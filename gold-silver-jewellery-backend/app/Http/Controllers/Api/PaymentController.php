@@ -9,6 +9,9 @@ use bSecure\UniversalCheckout\BsecureCheckout;
 
 class PaymentController extends Controller
 {
+    /**
+     * bSecure Checkout Initiate Karein
+     */
     public function initiatePayment(Request $request)
     {
         // 1. Validation
@@ -20,10 +23,10 @@ class PaymentController extends Controller
         try {
             $order = new BsecureCheckout();
 
-            // 2. Set Unique Order ID
+            // 2. Unique Order ID (GSJ prefix ke sath)
             $order->setOrderId('GSJ-' . time());
 
-            // 3. Set Customer Details
+            // 3. Customer Details
             $customer = [
                 "name"         => $request->name ?? "Customer",
                 "email"        => $request->email,
@@ -32,7 +35,7 @@ class PaymentController extends Controller
             ];
             $order->setCustomer($customer);
 
-            // 4. Set Cart Items (Missing keys added to avoid Undefined Array Key error)
+            // 4. Cart Items (Required fields for bSecure SDK)
             $products = [
                 [
                     "id"                => "1",
@@ -43,27 +46,24 @@ class PaymentController extends Controller
                     "sale_price"        => $request->total,
                     "image"             => "https://via.placeholder.com/150", 
                     "description"       => "Jewelry purchase from SilverGold&Jewellers",
-                    "short_description" => "Jewelry purchase" // Fixed: Added missing key
+                    "short_description" => "Jewelry purchase" 
                 ]
             ];
             $order->setCartItems($products);
 
-            // 5. Optional: Set Callback URL explicitly if needed
-            // $order->setCallbackUrl(env('BSECURE_RETURN_URL'));
-
-            // 6. Create Order
+            // 5. Create Order via bSecure API
             $result = $order->createOrder();
 
-            // 7. Handle Response
-            if (!empty($result['checkout_url'])) {
+            // 6. Response Handling (Updated IF condition for bSecure body structure)
+            if (isset($result['body']['checkout_url'])) {
                 return response()->json([
                     'success'      => true,
-                    'checkout_url' => $result['checkout_url'],
-                    'order_ref'    => $result['order_reference'] ?? null
+                    'checkout_url' => $result['body']['checkout_url'],
+                    'order_ref'    => $result['body']['order_reference'] ?? null
                 ], 200);
             }
 
-            // Return full result if bSecure sends an error message
+            // Agar bSecure koi error bhejta hai
             return response()->json([
                 'success' => false,
                 'message' => 'bSecure API Error',
@@ -80,28 +80,32 @@ class PaymentController extends Controller
         }
     }
 
+    /**
+     * bSecure se wapis aane par payment verify karein
+     */
     public function verifyPayment(Request $request)
     {
         try {
+            // bSecure query string mein 'order_ref' bhejta hai
             $order_ref = $request->query('order_ref');
             
             if (!$order_ref) {
+                Log::warning('Payment verification failed: No order_ref provided.');
                 return redirect('https://silvergoldjewellers.vercel.app/order-failed');
             }
 
             $orderStatusUpdate = new BsecureCheckout();
             $result = $orderStatusUpdate->orderStatusUpdates($order_ref);
 
-            // Check placement_status in the body response
-            // Status 3 = Placed/Completed
+            // Check placement_status: 3 means "Placed/Success"
             if (isset($result['body']['placement_status']) && $result['body']['placement_status'] == "3") {
-                return redirect('https://silvergoldjewellers.vercel.app/order-success');
+                return redirect('https://silvergoldjewellers.vercel.app/order-success?ref=' . $order_ref);
             }
 
             return redirect('https://silvergoldjewellers.vercel.app/order-failed');
 
         } catch (\Exception $e) {
-            Log::error('Verification Error: ' . $e->getMessage());
+            Log::error('Verification Exception: ' . $e->getMessage());
             return redirect('https://silvergoldjewellers.vercel.app/order-failed');
         }
     }
