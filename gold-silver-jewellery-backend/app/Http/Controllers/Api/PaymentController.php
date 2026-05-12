@@ -5,13 +5,13 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
-// Documentation ke mutabiq sahi class path
 use bSecure\UniversalCheckout\BsecureCheckout;
 
 class PaymentController extends Controller
 {
     public function initiatePayment(Request $request)
     {
+        // 1. Validation
         $request->validate([
             'total' => 'required|numeric',
             'email' => 'required|email',
@@ -20,58 +20,62 @@ class PaymentController extends Controller
         try {
             $order = new BsecureCheckout();
 
-            // 1. Order ID set karein
+            // 2. Set Unique Order ID
             $order->setOrderId('GSJ-' . time());
 
-            // 2. Customer details (Request se phone number lein)
+            // 3. Set Customer Details
             $customer = [
-                "name" => $request->name ?? "Customer",
-                "email" => $request->email,
+                "name"         => $request->name ?? "Customer",
+                "email"        => $request->email,
                 "country_code" => "92",
                 "phone_number" => $request->phone ?? "3001234567",
             ];
             $order->setCustomer($customer);
 
-            // 3. Sabse important: Cart Items mein amount bhejna lazmi hai
-            // Agar aap pure items nahi bhej rahe, to ek dummy item bhejein total price ke sath
+            // 4. Set Cart Items (Missing keys added to avoid Undefined Array Key error)
             $products = [
                 [
-                    "id"          => "1",
-                    "name"        => "Jewelry Item", // Aap "Order Total" bhi likh sakte hain
-                    "sku"         => "GSJ-001",
-                    "quantity"    => 1,
-                    "price"       => $request->total,
-                    "sale_price"  => $request->total,
-                    "image"       => "",
-                    "description" => "Jewelry purchase from SilverGold&Jewellers"
+                    "id"                => "1",
+                    "name"              => "Jewelry Item",
+                    "sku"               => "GSJ-001",
+                    "quantity"          => 1,
+                    "price"             => $request->total,
+                    "sale_price"        => $request->total,
+                    "image"             => "https://via.placeholder.com/150", 
+                    "description"       => "Jewelry purchase from SilverGold&Jewellers",
+                    "short_description" => "Jewelry purchase" // Fixed: Added missing key
                 ]
             ];
             $order->setCartItems($products);
 
-            // 4. Create Order
+            // 5. Optional: Set Callback URL explicitly if needed
+            // $order->setCallbackUrl(env('BSECURE_RETURN_URL'));
+
+            // 6. Create Order
             $result = $order->createOrder();
 
-            // Debugging ke liye: Agar checkout_url nahi milta to full response check karein
+            // 7. Handle Response
             if (!empty($result['checkout_url'])) {
                 return response()->json([
-                    'success' => true,
+                    'success'      => true,
                     'checkout_url' => $result['checkout_url'],
-                    'order_ref' => $result['order_reference'] ?? null
+                    'order_ref'    => $result['order_reference'] ?? null
                 ], 200);
             }
 
-            // Agar fail ho jaye, to bSecure ka asli error message wapis bhejien
+            // Return full result if bSecure sends an error message
             return response()->json([
                 'success' => false,
                 'message' => 'bSecure API Error',
-                'details' => $result // Isse Thunder Client par asli wajah nazar ayegi
+                'details' => $result 
             ], 400);
+
         } catch (\Exception $e) {
             Log::error('bSecure Error: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'Payment initiation failed.',
-                'error' => $e->getMessage()
+                'error'   => $e->getMessage()
             ], 500);
         }
     }
@@ -79,18 +83,25 @@ class PaymentController extends Controller
     public function verifyPayment(Request $request)
     {
         try {
-            // Documentation ke mutabiq status check karne ka tariqa
             $order_ref = $request->query('order_ref');
+            
+            if (!$order_ref) {
+                return redirect('https://silvergoldjewellers.vercel.app/order-failed');
+            }
+
             $orderStatusUpdate = new BsecureCheckout();
             $result = $orderStatusUpdate->orderStatusUpdates($order_ref);
 
-            // Check if status is placed (ID 3 as per your doc)
+            // Check placement_status in the body response
+            // Status 3 = Placed/Completed
             if (isset($result['body']['placement_status']) && $result['body']['placement_status'] == "3") {
                 return redirect('https://silvergoldjewellers.vercel.app/order-success');
             }
 
             return redirect('https://silvergoldjewellers.vercel.app/order-failed');
+
         } catch (\Exception $e) {
+            Log::error('Verification Error: ' . $e->getMessage());
             return redirect('https://silvergoldjewellers.vercel.app/order-failed');
         }
     }
