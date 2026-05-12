@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 // Documentation ke mutabiq sahi class path
-use bSecure\UniversalCheckout\BsecureCheckout; 
+use bSecure\UniversalCheckout\BsecureCheckout;
 
 class PaymentController extends Controller
 {
@@ -18,28 +18,41 @@ class PaymentController extends Controller
         ]);
 
         try {
-            // 1. Naya object banayein (Documentation method)
             $order = new BsecureCheckout();
 
-            // 2. Data set karein (Setter methods jo doc mein hain)
-            $order->setOrderId('GSJ-' . uniqid());
-            
+            // 1. Order ID set karein
+            $order->setOrderId('GSJ-' . time());
+
+            // 2. Customer details (Request se phone number lein)
             $customer = [
-                "name" => "Customer", // Aap request se le sakte hain
+                "name" => $request->name ?? "Customer",
                 "email" => $request->email,
                 "country_code" => "92",
                 "phone_number" => $request->phone ?? "3001234567",
             ];
             $order->setCustomer($customer);
 
-            // Products (Empty array bhej sakte hain agar simple checkout hai)
-            $order->setCartItems([]); 
+            // 3. Sabse important: Cart Items mein amount bhejna lazmi hai
+            // Agar aap pure items nahi bhej rahe, to ek dummy item bhejein total price ke sath
+            $products = [
+                [
+                    "id"          => "1",
+                    "name"        => "Jewelry Item", // Aap "Order Total" bhi likh sakte hain
+                    "sku"         => "GSJ-001",
+                    "quantity"    => 1,
+                    "price"       => $request->total,
+                    "sale_price"  => $request->total,
+                    "image"       => "",
+                    "description" => "Jewelry purchase from SilverGold&Jewellers"
+                ]
+            ];
+            $order->setCartItems($products);
 
-            // 3. Order Create karein
+            // 4. Create Order
             $result = $order->createOrder();
 
-            // Documentation ke mutabiq result aik array hoga
-            if(!empty($result['checkout_url'])) {
+            // Debugging ke liye: Agar checkout_url nahi milta to full response check karein
+            if (!empty($result['checkout_url'])) {
                 return response()->json([
                     'success' => true,
                     'checkout_url' => $result['checkout_url'],
@@ -47,8 +60,12 @@ class PaymentController extends Controller
                 ], 200);
             }
 
-            return response()->json(['success' => false, 'message' => 'Checkout URL not found'], 500);
-
+            // Agar fail ho jaye, to bSecure ka asli error message wapis bhejien
+            return response()->json([
+                'success' => false,
+                'message' => 'bSecure API Error',
+                'details' => $result // Isse Thunder Client par asli wajah nazar ayegi
+            ], 400);
         } catch (\Exception $e) {
             Log::error('bSecure Error: ' . $e->getMessage());
             return response()->json([
@@ -73,7 +90,6 @@ class PaymentController extends Controller
             }
 
             return redirect('https://silvergoldjewellers.vercel.app/order-failed');
-
         } catch (\Exception $e) {
             return redirect('https://silvergoldjewellers.vercel.app/order-failed');
         }
