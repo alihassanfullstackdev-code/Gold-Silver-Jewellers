@@ -1,7 +1,9 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { useCart } from '../context/CartContext';
-import { Trash2, Plus, Minus, ShoppingBag } from 'lucide-react';
+import { Trash2, Plus, Minus, ShoppingBag, Loader2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useState } from 'react';
+import axios from 'axios';
 
 interface CartItem {
   id: number;
@@ -9,12 +11,15 @@ interface CartItem {
   image: string;
   metal_type: string;
   fixed_price: number;
-  making_charges: number; // Added this field
+  making_charges: number;
   quantity: number;
 }
 
 export default function Cart() {
   const { cartItems, removeFromCart, updateQuantity } = useCart();
+  const [loading, setLoading] = useState(false);
+  
+  // Aapka environment variable jo Vercel/Local dono par set hai
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
   // Actual Price calculation: (Fixed + Making) * Quantity
@@ -23,12 +28,41 @@ export default function Cart() {
     return acc + (actualPrice * item.quantity);
   }, 0);
 
+  // --- BSECURE CHECKOUT LOGIC ---
+  const handleCheckout = async () => {
+    if (cartItems.length === 0) return;
+    
+    setLoading(true);
+    try {
+      // Railway backend endpoint hit ho raha hai
+      const response = await axios.post(`${API_BASE_URL}/payment/initiate`, {
+        total: subtotal,
+        email: "customer@gmail.com", // Temporary, bad mein auth context se change kar lein
+        name: "Valued Customer",
+        phone: "923001234567"
+      });
+
+      if (response.data.success && response.data.checkout_url) {
+        // Direct redirection to bSecure Sandbox/Live page
+        window.location.href = response.data.checkout_url;
+      } else {
+        console.error("Backend Error:", response.data);
+        alert("Payment initiation failed. Please check console.");
+      }
+    } catch (error: any) {
+      console.error("Connection Error:", error);
+      // Agar CORS ka masla hoga to yahan se pata chalay ga
+      alert(error.response?.data?.message || "Could not connect to the payment server. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[#030303] text-white pt-40 pb-20 px-6">
       <div className="max-w-5xl mx-auto">
         <header className="mb-16 border-b border-white/5 pb-8 flex justify-between items-end">
           <div>
-            {/* <span className="text-[10px] uppercase tracking-[0.5em] text-gold font-bold">Your Selection</span> */}
             <h1 className="font-serif text-5xl md:text-7xl mt-4">The <span className="italic text-gold">Cart</span></h1>
           </div>
           <p className="text-white/40 text-xs tracking-widest uppercase">{cartItems.length} Items</p>
@@ -58,7 +92,6 @@ export default function Cart() {
                     exit={{ opacity: 0, x: -20 }}
                     className="flex gap-6 border-b border-white/5 pb-8 group"
                   >
-                    {/* Updated Image Path Logic */}
                     <div className="w-24 h-32 md:w-32 md:h-40 bg-[#080808] border border-white/10 overflow-hidden">
                       <img 
                         src={item.image?.startsWith('http') 
@@ -87,7 +120,6 @@ export default function Cart() {
                           <button onClick={() => updateQuantity(item.id, 1)} className="p-1 text-white/40 hover:text-gold"><Plus size={14} /></button>
                         </div>
                         <p className="font-serif text-gold text-sm md:text-lg">
-                          {/* ACTUAL PRICE: (Fixed + Making) * Quantity */}
                           PKR {((Number(item.fixed_price || 0) + Number(item.making_charges || 0)) * item.quantity).toLocaleString()}
                         </p>
                       </div>
@@ -115,9 +147,23 @@ export default function Cart() {
                   <span>Total</span>
                   <span className="text-gold">PKR {subtotal.toLocaleString()}</span>
                 </div>
-                <button className="w-full py-5 bg-gold text-black font-bold text-[10px] uppercase tracking-[0.3em] hover:bg-white transition-all duration-500">
-                  Secure Checkout
+                
+                {/* CHECKOUT BUTTON WITH LOADING STATE */}
+                <button 
+                  onClick={handleCheckout}
+                  disabled={loading || cartItems.length === 0}
+                  className="w-full py-5 bg-gold text-black font-bold text-[10px] uppercase tracking-[0.3em] hover:bg-white transition-all duration-500 flex justify-center items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 size={14} className="animate-spin" />
+                      Authenticating...
+                    </>
+                  ) : (
+                    "Secure Checkout"
+                  )}
                 </button>
+
                 <p className="text-[8px] text-white/20 uppercase tracking-[0.2em] text-center italic">
                   Crafted with precision, delivered with care.
                 </p>
