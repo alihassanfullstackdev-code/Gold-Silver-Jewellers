@@ -6,15 +6,15 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use bSecure\UniversalCheckout\BsecureCheckout;
+use App\Models\Order; // Model Import karein
 
 class PaymentController extends Controller
 {
     /**
-     * bSecure Checkout Initiate
+     * bSecure Checkout Initiate & Save to DB
      */
     public function initiatePayment(Request $request)
     {
-        // 1. Validation
         $request->validate([
             'total' => 'required|numeric',
             'email' => 'required|email',
@@ -22,59 +22,58 @@ class PaymentController extends Controller
         ]);
 
         try {
-            $order = new BsecureCheckout();
+            $orderSDK = new BsecureCheckout();
+            $merchantOrderId = 'GSJ-' . time(); // Unique ID for your DB
+            $orderSDK->setOrderId($merchantOrderId);
 
-            // 2. Unique Order ID
-            $order->setOrderId('GSJ-' . time());
-
-            // 3. Customer Details
+            // Customer Details
             $customer = [
                 "name"         => $request->name ?? "Valued Customer",
                 "email"        => $request->email,
                 "country_code" => "92",
                 "phone_number" => $request->phone ?? "923001234567",
             ];
-            $order->setCustomer($customer);
+            $orderSDK->setCustomer($customer);
 
-            // 4. Robust Cart Items Mapping
+            // Products Mapping
             $products = [];
             foreach ($request->cart as $item) {
-                
-                // Image URL Logic
                 $img = $item['image'] ?? '';
-                if (!empty($img) && !filter_var($img, FILTER_VALIDATE_URL)) {
-                    $imageUrl = "https://gold-silver-jewellers-production.up.railway.app/storage/" . $img;
-                } else {
-                    $imageUrl = !empty($img) ? $img : "https://via.placeholder.com/150";
-                }
+                $imageUrl = filter_var($img, FILTER_VALIDATE_URL) 
+                            ? $img 
+                            : "https://gold-silver-jewellers-production.up.railway.app/storage/" . $img;
 
-                // Price Calculation with Null Safety to avoid "Undefined Array Key"
-                $fixedPrice = (float)($item['fixed_price'] ?? 0);
-                $makingCharges = (float)($item['making_charges'] ?? 0);
-                $quantity = (int)($item['quantity'] ?? 1);
-                $unitPrice = $fixedPrice + $makingCharges;
+                $unitPrice = (float)($item['fixed_price'] ?? 0) + (float)($item['making_charges'] ?? 0);
 
-                // Har key ko explicitly define kiya hai jo bSecure mangta hai
                 $products[] = [
                     "id"                => (string)($item['id'] ?? rand(100, 999)),
                     "name"              => $item['name'] ?? "Jewelry Item",
                     "sku"               => "GSJ-" . ($item['id'] ?? rand(1, 50)),
-                    "quantity"          => $quantity,
+                    "quantity"          => (int)($item['quantity'] ?? 1),
                     "price"             => $unitPrice,
                     "sale_price"        => $unitPrice,
                     "image"             => $imageUrl,
                     "description"       => ($item['name'] ?? "Jewelry") . " - Premium Selection",
-                    "short_description" => "Handcrafted Jewelry" // Fixed: SDK strictly requires this
+                    "short_description" => "Handcrafted Jewelry"
                 ];
             }
             
-            $order->setCartItems($products);
+            $orderSDK->setCartItems($products);
+            $result = $orderSDK->createOrder();
 
-            // 5. Create Order
-            $result = $order->createOrder();
-
-            // 6. Handle Response based on bSecure's Body Structure
             if (isset($result['body']['checkout_url'])) {
+                
+                // --- DATABASE SAVING START ---
+                Order::create([
+                    'order_id'        => $merchantOrderId,
+                    'order_reference' => $result['body']['order_reference'] ?? null,
+                    'customer_email'  => $request->email,
+                    'total_amount'    => $request->total,
+                    'status'          => 'pending',
+                    'cart_details'    => $request->cart, // JSON casting model handle karega
+                ]);
+                // --- DATABASE SAVING END ---
+
                 return response()->json([
                     'success'      => true,
                     'checkout_url' => $result['body']['checkout_url'],
@@ -82,25 +81,16 @@ class PaymentController extends Controller
                 ], 200);
             }
 
-            // Error Case
-            return response()->json([
-                'success' => false,
-                'message' => 'bSecure API Error',
-                'details' => $result 
-            ], 400);
+            return response()->json(['success' => false, 'details' => $result], 400);
 
         } catch (\Exception $e) {
-            Log::error('bSecure Error Trace: ' . $e->getMessage());
-            return response()->json([
-                'success' => false,
-                'message' => 'Server Error in Payment Initiation',
-                'error'   => $e->getMessage()
-            ], 500);
+            Log::error('bSecure Error: ' . $e->getMessage());
+            return response()->json(['success' => false, 'error' => $e->getMessage()], 500);
         }
     }
 
     /**
-     * Payment Verification Callback
+     * Payment Verification & Update DB Status
      */
     public function verifyPayment(Request $request)
     {
@@ -114,9 +104,22 @@ class PaymentController extends Controller
             $orderStatusUpdate = new BsecureCheckout();
             $result = $orderStatusUpdate->orderStatusUpdates($order_ref);
 
-            // Status 3 is typically "Order Placed/Successful"
+            // Database mein order dhoondein
+            $localOrder = Order::where('order_reference', $order_ref)->first();
+
             if (isset($result['body']['placement_status']) && $result['body']['placement_status'] == "3") {
+                
+                // Database status update
+                if ($localOrder) {
+                    $localOrder->update(['status' => 'completed']);
+                }
+
                 return redirect('https://silvergoldjewellers.vercel.app/order-success?ref=' . $order_ref);
+            }
+
+            // Agar status fail hua to
+            if ($localOrder) {
+                $localOrder->update(['status' => 'failed']);
             }
 
             return redirect('https://silvergoldjewellers.vercel.app/order-failed');
