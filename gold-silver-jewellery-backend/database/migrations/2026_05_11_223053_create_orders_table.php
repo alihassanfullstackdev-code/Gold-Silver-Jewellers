@@ -13,10 +13,12 @@ return new class extends Migration
     {
         Schema::create('orders', function (Blueprint $table) {
             $table->id();
-            $table->string('order_id')->unique(); // GSJ-12345
+            $table->string('order_id')->unique(); // Merchant Order ID (GSJ-123...)
+            $table->string('order_reference')->nullable(); // bSecure ka reference code
             $table->string('customer_email');
-            $table->decimal('total_amount', 20, 2);
-            $table->string('status')->default('pending'); // pending, paid, failed
+            $table->decimal('total_amount', 12, 2);
+            $table->string('status')->default('pending'); // pending, completed, failed
+            $table->json('cart_details')->nullable(); // Pura items ka data
             $table->timestamps();
         });
     }
