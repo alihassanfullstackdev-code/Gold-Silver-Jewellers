@@ -9,24 +9,18 @@ use bSecure\UniversalCheckout\BsecureCheckout;
 
 class PaymentController extends Controller
 {
-    /**
-     * bSecure Checkout Initiate Karein
-     */
     public function initiatePayment(Request $request)
     {
-        // 1. Validation
         $request->validate([
             'total' => 'required|numeric',
             'email' => 'required|email',
+            'cart'  => 'required|array', 
         ]);
 
         try {
             $order = new BsecureCheckout();
-
-            // 2. Unique Order ID (GSJ prefix ke sath)
             $order->setOrderId('GSJ-' . time());
 
-            // 3. Customer Details
             $customer = [
                 "name"         => $request->name ?? "Customer",
                 "email"        => $request->email,
@@ -35,26 +29,34 @@ class PaymentController extends Controller
             ];
             $order->setCustomer($customer);
 
-            // 4. Cart Items (Required fields for bSecure SDK)
-            $products = [
-                [
-                    "id"                => "1",
-                    "name"              => "Jewelry Item",
-                    "sku"               => "GSJ-001",
-                    "quantity"          => 1,
-                    "price"             => $request->total,
-                    "sale_price"        => $request->total,
-                    "image"             => "https://via.placeholder.com/150", 
-                    "description"       => "Jewelry purchase from SilverGold&Jewellers",
-                    "short_description" => "Jewelry purchase" 
-                ]
-            ];
+            $products = [];
+            foreach ($request->cart as $item) {
+                // Image URL logic
+                $imageUrl = $item['image'];
+                if (!filter_var($imageUrl, FILTER_VALIDATE_URL)) {
+                    $imageUrl = "https://gold-silver-jewellers-production.up.railway.app/storage/" . $item['image'];
+                }
+
+                // Har item ki apni price aur quantity yahan set ho rahi hai
+                $unitPrice = (float)($item['fixed_price'] + ($item['making_charges'] ?? 0));
+
+                $products[] = [
+                    "id"                => (string)$item['id'],
+                    "name"              => $item['name'],
+                    "sku"               => $item['sku'] ?? 'GSJ-' . $item['id'],
+                    "quantity"          => (int)$item['quantity'], // <-- Yeh quantity bSecure page par show hogi
+                    "price"             => $unitPrice,
+                    "sale_price"        => $unitPrice,
+                    "image"             => $imageUrl, 
+                    "description"       => $item['name'] . " - Premium Collection",
+                    "short_description" => "SilverGold Jewelry"
+                ];
+            }
+            
             $order->setCartItems($products);
 
-            // 5. Create Order via bSecure API
             $result = $order->createOrder();
 
-            // 6. Response Handling (Updated IF condition for bSecure body structure)
             if (isset($result['body']['checkout_url'])) {
                 return response()->json([
                     'success'      => true,
@@ -63,50 +65,11 @@ class PaymentController extends Controller
                 ], 200);
             }
 
-            // Agar bSecure koi error bhejta hai
-            return response()->json([
-                'success' => false,
-                'message' => 'bSecure API Error',
-                'details' => $result 
-            ], 400);
+            return response()->json(['success' => false, 'details' => $result], 400);
 
         } catch (\Exception $e) {
             Log::error('bSecure Error: ' . $e->getMessage());
-            return response()->json([
-                'success' => false,
-                'message' => 'Payment initiation failed.',
-                'error'   => $e->getMessage()
-            ], 500);
-        }
-    }
-
-    /**
-     * bSecure se wapis aane par payment verify karein
-     */
-    public function verifyPayment(Request $request)
-    {
-        try {
-            // bSecure query string mein 'order_ref' bhejta hai
-            $order_ref = $request->query('order_ref');
-            
-            if (!$order_ref) {
-                Log::warning('Payment verification failed: No order_ref provided.');
-                return redirect('https://silvergoldjewellers.vercel.app/order-failed');
-            }
-
-            $orderStatusUpdate = new BsecureCheckout();
-            $result = $orderStatusUpdate->orderStatusUpdates($order_ref);
-
-            // Check placement_status: 3 means "Placed/Success"
-            if (isset($result['body']['placement_status']) && $result['body']['placement_status'] == "3") {
-                return redirect('https://silvergoldjewellers.vercel.app/order-success?ref=' . $order_ref);
-            }
-
-            return redirect('https://silvergoldjewellers.vercel.app/order-failed');
-
-        } catch (\Exception $e) {
-            Log::error('Verification Exception: ' . $e->getMessage());
-            return redirect('https://silvergoldjewellers.vercel.app/order-failed');
+            return response()->json(['success' => false, 'error' => $e->getMessage()], 500);
         }
     }
 }
