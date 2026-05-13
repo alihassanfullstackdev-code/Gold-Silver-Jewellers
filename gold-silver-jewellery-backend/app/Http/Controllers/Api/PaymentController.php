@@ -6,77 +6,86 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use bSecure\UniversalCheckout\BsecureCheckout;
+use App\Models\Order;
 
 class PaymentController extends Controller
 {
     public function initiatePayment(Request $request)
     {
-        // 1. Validation
         $request->validate([
             'total' => 'required|numeric',
             'email' => 'required|email',
+            'cart'  => 'required|array', 
         ]);
 
         try {
-            $order = new BsecureCheckout();
+            $orderSDK = new BsecureCheckout();
+            $merchantOrderId = 'GSJ-' . time();
+            $orderSDK->setOrderId($merchantOrderId);
 
-            // 2. Set Unique Order ID
-            $order->setOrderId('GSJ-' . time());
-
-            // 3. Set Customer Details
+            // Customer Data
             $customer = [
-                "name"         => $request->name ?? "Customer",
+                "name"         => $request->name ?? "Valued Customer",
                 "email"        => $request->email,
                 "country_code" => "92",
                 "phone_number" => $request->phone ?? "3001234567",
             ];
-            $order->setCustomer($customer);
+            $orderSDK->setCustomer($customer);
 
-            // 4. Set Cart Items (Missing keys added to avoid Undefined Array Key error)
-            $products = [
-                [
-                    "id"                => "1",
-                    "name"              => "Jewelry Item",
-                    "sku"               => "GSJ-001",
-                    "quantity"          => 1,
-                    "price"             => $request->total,
-                    "sale_price"        => $request->total,
-                    "image"             => "https://via.placeholder.com/150", 
-                    "description"       => "Jewelry purchase from SilverGold&Jewellers",
-                    "short_description" => "Jewelry purchase" // Fixed: Added missing key
-                ]
-            ];
-            $order->setCartItems($products);
+            // Products Mapping with Safety
+            $products = [];
+            foreach ($request->cart as $item) {
+                $price = floatval($item['fixed_price'] ?? $item['price'] ?? 0);
+                $making = floatval($item['making_charges'] ?? 0);
+                $unitPrice = $price + $making;
 
-            // 5. Optional: Set Callback URL explicitly if needed
-            // $order->setCallbackUrl(env('BSECURE_RETURN_URL'));
+                $products[] = [
+                    "id"                => (string)($item['id'] ?? rand(100, 999)),
+                    "name"              => (string)($item['name'] ?? "Jewelry"),
+                    "sku"               => "GSJ-" . ($item['id'] ?? rand(1, 100)),
+                    "quantity"          => (int)($item['quantity'] ?? 1),
+                    "price"             => $unitPrice,
+                    "sale_price"        => $unitPrice,
+                    "discount"          => 0,
+                    "image"             => $item['image'] ?? "https://via.placeholder.com/150",
+                    "description"       => "Premium Collection",
+                    "short_description" => "SilverGold Jewelry"
+                ];
+            }
+            
+            $orderSDK->setCartItems($products);
+            $result = $orderSDK->createOrder();
 
-            // 6. Create Order
-            $result = $order->createOrder();
+            // --- REDIRECTION FIX ---
+            // Naya SDK checkout_url 'body' key ke andar bhejta hai
+            if (isset($result['body']['checkout_url'])) {
+                
+                // Save to Database
+                Order::create([
+                    'order_id'        => $merchantOrderId,
+                    'order_reference' => $result['body']['order_reference'] ?? null,
+                    'customer_email'  => $request->email,
+                    'total_amount'    => $request->total,
+                    'status'          => 'pending',
+                    'cart_details'    => $request->cart,
+                ]);
 
-            // 7. Handle Response
-            if (!empty($result['checkout_url'])) {
                 return response()->json([
                     'success'      => true,
-                    'checkout_url' => $result['checkout_url'],
-                    'order_ref'    => $result['order_reference'] ?? null
+                    'checkout_url' => $result['body']['checkout_url'], // Correct path
                 ], 200);
             }
 
-            // Return full result if bSecure sends an error message
+            // Authentication Failed ya koi aur error yahan details mein show hoga
             return response()->json([
                 'success' => false,
-                'message' => 'bSecure API Error',
+                'message' => 'bSecure Error',
                 'details' => $result 
             ], 400);
 
         } catch (\Exception $e) {
             Log::error('bSecure Error: ' . $e->getMessage());
-            return response()->json([
-                'success' => false,
-                'message' => 'Payment initiation failed.',
-                'error'   => $e->getMessage()
-            ], 500);
+            return response()->json(['success' => false, 'error' => $e->getMessage()], 500);
         }
     }
 
@@ -84,20 +93,18 @@ class PaymentController extends Controller
     {
         try {
             $order_ref = $request->query('order_ref');
-            
-            if (!$order_ref) {
-                return redirect('https://silvergoldjewellers.vercel.app/order-failed');
-            }
+            if (!$order_ref) return redirect('https://silvergoldjewellers.vercel.app/order-failed');
 
             $orderStatusUpdate = new BsecureCheckout();
             $result = $orderStatusUpdate->orderStatusUpdates($order_ref);
+            $localOrder = Order::where('order_reference', $order_ref)->first();
 
-            // Check placement_status in the body response
-            // Status 3 = Placed/Completed
             if (isset($result['body']['placement_status']) && $result['body']['placement_status'] == "3") {
-                return redirect('https://silvergoldjewellers.vercel.app/order-success');
+                if ($localOrder) $localOrder->update(['status' => 'completed']);
+                return redirect('https://silvergoldjewellers.vercel.app/order-success?ref=' . $order_ref);
             }
 
+            if ($localOrder) $localOrder->update(['status' => 'failed']);
             return redirect('https://silvergoldjewellers.vercel.app/order-failed');
 
         } catch (\Exception $e) {
