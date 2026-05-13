@@ -15,7 +15,6 @@ class PaymentController extends Controller
      */
     public function initiatePayment(Request $request)
     {
-        // 1. Validation
         $request->validate([
             'total' => 'required|numeric',
             'email' => 'required|email',
@@ -25,14 +24,13 @@ class PaymentController extends Controller
         try {
             $orderSDK = new BsecureCheckout();
             $merchantOrderId = 'GSJ-' . time();
-            
-            // 2. Core Configurations
-            $orderSDK->setOrderId($merchantOrderId);
-            
-            // Explicitly set the return URL for verification
-            $orderSDK->setCallbacks('https://gold-silver-jewellers-production.up.railway.app/api/payment/verify');
 
-            // 3. Customer Data
+            // Configuration - Sirf wahi use karein jo 100% support ho rahi hain
+            $orderSDK->setOrderId($merchantOrderId);
+
+            // Note: setCallbackUrl aur setMerchantId remove kar di hain kyunki SDK support nahi kar raha.
+            // Redirect URL ab aapne bSecure Dashboard (Portal) mein "Integration Settings" se set karni hai.
+
             $customer = [
                 "name"         => $request->name ?? "Valued Customer",
                 "email"        => $request->email,
@@ -41,7 +39,6 @@ class PaymentController extends Controller
             ];
             $orderSDK->setCustomer($customer);
 
-            // 4. Products Mapping
             $products = [];
             foreach ($request->cart as $item) {
                 $price = floatval($item['fixed_price'] ?? $item['price'] ?? 0);
@@ -63,14 +60,10 @@ class PaymentController extends Controller
             }
 
             $orderSDK->setCartItems($products);
-            
-            // 5. Create Order
             $result = $orderSDK->createOrder();
 
-            // 6. Handle Response (Checking inside 'body' key)
+            // SDK response check
             if (isset($result['body']['checkout_url'])) {
-
-                // Save to Database
                 Order::create([
                     'order_id'        => $merchantOrderId,
                     'order_reference' => $result['body']['order_reference'] ?? null,
@@ -86,13 +79,11 @@ class PaymentController extends Controller
                 ], 200);
             }
 
-            // Return Error Details if bSecure rejects
             return response()->json([
                 'success' => false,
                 'message' => 'bSecure API Error',
                 'details' => $result
             ], 400);
-
         } catch (\Exception $e) {
             Log::error('bSecure Initiate Error: ' . $e->getMessage());
             return response()->json(['success' => false, 'error' => $e->getMessage()], 500);
@@ -117,7 +108,7 @@ class PaymentController extends Controller
 
             $orderStatusUpdate = new BsecureCheckout();
             $result = $orderStatusUpdate->orderStatusUpdates($order_ref);
-            
+
             Log::info('bSecure Status API Response:', ['result' => $result]);
 
             $localOrder = Order::where('order_reference', $order_ref)->first();
@@ -136,7 +127,6 @@ class PaymentController extends Controller
                 $localOrder->update(['status' => 'failed']);
             }
             return redirect('https://silvergoldjewellers.vercel.app/order-failed?ref=' . $order_ref);
-
         } catch (\Exception $e) {
             Log::error('Verification Crash: ' . $e->getMessage());
             return redirect('https://silvergoldjewellers.vercel.app/order-failed?error=exception');
