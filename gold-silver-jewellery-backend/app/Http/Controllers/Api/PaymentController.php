@@ -29,11 +29,8 @@ class PaymentController extends Controller
             // 2. Core Configurations
             $orderSDK->setOrderId($merchantOrderId);
             
-            // Merchant ID from your portal (9117)
-            $orderSDK->setMerchantId('9117'); 
-            
             // Explicitly set the return URL for verification
-            $orderSDK->setCallbackUrl('https://gold-silver-jewellers-production.up.railway.app/api/payment/verify');
+            $orderSDK->setCallbacks('https://gold-silver-jewellers-production.up.railway.app/api/payment/verify');
 
             // 3. Customer Data
             $customer = [
