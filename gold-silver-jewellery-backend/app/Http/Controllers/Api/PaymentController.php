@@ -6,27 +6,24 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use bSecure\UniversalCheckout\BsecureCheckout;
-use App\Models\Order; // Model Import karein
+use App\Models\Order;
 
 class PaymentController extends Controller
 {
-    /**
-     * bSecure Checkout Initiate & Save to DB
-     */
     public function initiatePayment(Request $request)
     {
+        // Strict Validation
         $request->validate([
-            'total' => 'required|numeric',
+            'total' => 'required',
             'email' => 'required|email',
             'cart'  => 'required|array', 
         ]);
 
         try {
             $orderSDK = new BsecureCheckout();
-            $merchantOrderId = 'GSJ-' . time(); // Unique ID for your DB
+            $merchantOrderId = 'GSJ-' . time();
             $orderSDK->setOrderId($merchantOrderId);
 
-            // Customer Details
             $customer = [
                 "name"         => $request->name ?? "Valued Customer",
                 "email"        => $request->email,
@@ -35,26 +32,32 @@ class PaymentController extends Controller
             ];
             $orderSDK->setCustomer($customer);
 
-            // Products Mapping
             $products = [];
             foreach ($request->cart as $item) {
+                // Handling multiple possible key names from frontend
+                $price = $item['fixed_price'] ?? $item['price'] ?? 0;
+                $making = $item['making_charges'] ?? $item['making'] ?? 0;
+                $quantity = (int)($item['quantity'] ?? 1);
+                
+                $unitPrice = (float)$price + (float)$making;
+
+                // Image handling
                 $img = $item['image'] ?? '';
                 $imageUrl = filter_var($img, FILTER_VALIDATE_URL) 
                             ? $img 
                             : "https://gold-silver-jewellers-production.up.railway.app/storage/" . $img;
 
-                $unitPrice = (float)($item['fixed_price'] ?? 0) + (float)($item['making_charges'] ?? 0);
-
                 $products[] = [
                     "id"                => (string)($item['id'] ?? rand(100, 999)),
-                    "name"              => $item['name'] ?? "Jewelry Item",
+                    "name"              => (string)($item['name'] ?? "Jewelry Item"),
                     "sku"               => "GSJ-" . ($item['id'] ?? rand(1, 50)),
-                    "quantity"          => (int)($item['quantity'] ?? 1),
+                    "quantity"          => $quantity,
                     "price"             => $unitPrice,
                     "sale_price"        => $unitPrice,
+                    "discount"          => 0,
                     "image"             => $imageUrl,
                     "description"       => ($item['name'] ?? "Jewelry") . " - Premium Selection",
-                    "short_description" => "Handcrafted Jewelry"
+                    "short_description" => "Handcrafted Jewelry" // Required field
                 ];
             }
             
@@ -62,17 +65,15 @@ class PaymentController extends Controller
             $result = $orderSDK->createOrder();
 
             if (isset($result['body']['checkout_url'])) {
-                
-                // --- DATABASE SAVING START ---
+                // Database Entry
                 Order::create([
                     'order_id'        => $merchantOrderId,
                     'order_reference' => $result['body']['order_reference'] ?? null,
                     'customer_email'  => $request->email,
                     'total_amount'    => $request->total,
                     'status'          => 'pending',
-                    'cart_details'    => $request->cart, // JSON casting model handle karega
+                    'cart_details'    => $request->cart,
                 ]);
-                // --- DATABASE SAVING END ---
 
                 return response()->json([
                     'success'      => true,
@@ -84,46 +85,28 @@ class PaymentController extends Controller
             return response()->json(['success' => false, 'details' => $result], 400);
 
         } catch (\Exception $e) {
-            Log::error('bSecure Error: ' . $e->getMessage());
+            Log::error('bSecure Error Trace: ' . $e->getMessage());
             return response()->json(['success' => false, 'error' => $e->getMessage()], 500);
         }
     }
 
-    /**
-     * Payment Verification & Update DB Status
-     */
     public function verifyPayment(Request $request)
     {
         try {
             $order_ref = $request->query('order_ref');
-            
-            if (!$order_ref) {
-                return redirect('https://silvergoldjewellers.vercel.app/order-failed');
-            }
+            if (!$order_ref) return redirect('https://silvergoldjewellers.vercel.app/order-failed');
 
             $orderStatusUpdate = new BsecureCheckout();
             $result = $orderStatusUpdate->orderStatusUpdates($order_ref);
-
-            // Database mein order dhoondein
             $localOrder = Order::where('order_reference', $order_ref)->first();
 
             if (isset($result['body']['placement_status']) && $result['body']['placement_status'] == "3") {
-                
-                // Database status update
-                if ($localOrder) {
-                    $localOrder->update(['status' => 'completed']);
-                }
-
+                if ($localOrder) $localOrder->update(['status' => 'completed']);
                 return redirect('https://silvergoldjewellers.vercel.app/order-success?ref=' . $order_ref);
             }
 
-            // Agar status fail hua to
-            if ($localOrder) {
-                $localOrder->update(['status' => 'failed']);
-            }
-
+            if ($localOrder) $localOrder->update(['status' => 'failed']);
             return redirect('https://silvergoldjewellers.vercel.app/order-failed');
-
         } catch (\Exception $e) {
             Log::error('Verification Error: ' . $e->getMessage());
             return redirect('https://silvergoldjewellers.vercel.app/order-failed');
