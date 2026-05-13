@@ -29,38 +29,34 @@ export default function CartDrawer({ isOpen, onClose }: { isOpen: boolean, onClo
   // --- ERROR-FREE CHECKOUT LOGIC ---
   const handleCheckout = async () => {
     if (cartItems.length === 0) return;
-    
+
     setLoading(true);
     try {
-      // Mapping cart items to ensure keys match backend exactly
-      const sanitizedCart = cartItems.map((item: CartItem) => ({
-        id: item.id,
-        name: item.name,
-        image: item.image,
-        fixed_price: Number(item.fixed_price),
-        making_charges: Number(item.making_charges),
-        quantity: Number(item.quantity)
-      }));
-
       const response = await axios.post(`${API_BASE_URL}/payment/initiate`, {
         total: subtotal,
-        email: "customer@gmail.com", 
+        email: "customer@gmail.com", // Dynamic karsaktay hain
         name: "Valued Customer",
         phone: "923001234567",
-        cart: sanitizedCart
+        cart: cartItems
       });
 
-      if (response.data.success && response.data.checkout_url) {
-        // Direct redirection to bSecure
-        window.location.href = response.data.checkout_url;
+      // --- CRITICAL REDIRECTION CHECK ---
+      // Hum check kar rahay hain ke backend ne data.checkout_url bheja hai ya nahi
+      if (response.data && response.data.checkout_url) {
+        console.log("Redirecting to:", response.data.checkout_url);
+        window.location.assign(response.data.checkout_url); // window.location.href se zyada reliable hai redirection ke liye
       } else {
-        console.error("Backend Response:", response.data);
-        alert("Payment Error: " + (response.data.message || "Please check console."));
+        console.error("Payload Issue:", response.data);
+        alert("Checkout Error: Backend did not return a URL.");
       }
+
     } catch (error: any) {
-      console.error("Axios Error:", error);
-      const errorMsg = error.response?.data?.message || "Server connection failed.";
-      alert(errorMsg);
+      console.error("API Error:", error);
+      // Agar bSecure "Authentication Failed" deta hai to yahan message nazar aayega
+      const errorMsg = error.response?.data?.details?.message?.[0] ||
+        error.response?.data?.message ||
+        "Connection failed.";
+      alert("Error: " + errorMsg);
     } finally {
       setLoading(false);
     }
@@ -82,7 +78,7 @@ export default function CartDrawer({ isOpen, onClose }: { isOpen: boolean, onClo
           {/* Drawer Panel */}
           <motion.div
             initial={{ x: '100%' }}
-            animate={{ x: 0 }} 
+            animate={{ x: 0 }}
             exit={{ x: '100%' }}
             transition={{ type: 'spring', damping: 25, stiffness: 200 }}
             className="fixed right-0 top-0 h-full w-full max-w-[450px] bg-[#050505] border-l border-white/5 z-[2100] flex flex-col shadow-2xl"
@@ -109,15 +105,15 @@ export default function CartDrawer({ isOpen, onClose }: { isOpen: boolean, onClo
                 cartItems.map((item: CartItem) => (
                   <div key={item.id} className="flex gap-6 group relative border-b border-white/5 pb-6">
                     <div className="w-24 h-32 bg-white/5 border border-white/10 overflow-hidden shrink-0">
-                      <img 
-                        src={item.image?.startsWith('http') 
-                          ? item.image 
-                          : `${API_BASE_URL.replace('/api', '')}/storage/${item.image}`} 
-                        className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-700" 
+                      <img
+                        src={item.image?.startsWith('http')
+                          ? item.image
+                          : `${API_BASE_URL.replace('/api', '')}/storage/${item.image}`}
+                        className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-700"
                         alt={item.name}
                       />
                     </div>
-                    
+
                     <div className="flex-1 flex flex-col justify-between py-1">
                       <div className="space-y-1">
                         <div className="flex justify-between items-start">
@@ -131,11 +127,11 @@ export default function CartDrawer({ isOpen, onClose }: { isOpen: boolean, onClo
                           PKR {((Number(item.fixed_price) + Number(item.making_charges)) * item.quantity).toLocaleString()}
                         </p>
                       </div>
-                      
+
                       <div className="flex items-center space-x-4 border border-white/10 w-fit px-3 py-1 mt-4 bg-white/5">
-                        <button onClick={() => updateQuantity(item.id, -1)} className="hover:text-gold transition-colors"><Minus size={14}/></button>
+                        <button onClick={() => updateQuantity(item.id, -1)} className="hover:text-gold transition-colors"><Minus size={14} /></button>
                         <span className="text-xs font-serif min-w-[24px] text-center">{item.quantity}</span>
-                        <button onClick={() => updateQuantity(item.id, 1)} className="hover:text-gold transition-colors"><Plus size={14}/></button>
+                        <button onClick={() => updateQuantity(item.id, 1)} className="hover:text-gold transition-colors"><Plus size={14} /></button>
                       </div>
                     </div>
                   </div>
@@ -150,8 +146,8 @@ export default function CartDrawer({ isOpen, onClose }: { isOpen: boolean, onClo
                   <span className="text-[10px] uppercase tracking-[0.4em] text-white/40">Vault Total</span>
                   <span className="text-3xl font-serif text-gold">PKR {subtotal.toLocaleString()}</span>
                 </div>
-                
-                <button 
+
+                <button
                   onClick={handleCheckout}
                   disabled={loading}
                   className="w-full py-5 bg-gold text-black font-black text-[10px] uppercase tracking-[0.5em] hover:bg-white transition-all duration-700 flex justify-center items-center gap-3 disabled:opacity-50"
