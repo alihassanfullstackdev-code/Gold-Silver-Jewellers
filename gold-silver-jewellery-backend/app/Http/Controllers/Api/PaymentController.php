@@ -12,11 +12,10 @@ class PaymentController extends Controller
 {
     public function initiatePayment(Request $request)
     {
-        // Strict Validation
         $request->validate([
             'total' => 'required',
             'email' => 'required|email',
-            'cart'  => 'required|array', 
+            'cart'  => 'required|array',
         ]);
 
         try {
@@ -33,44 +32,50 @@ class PaymentController extends Controller
             $orderSDK->setCustomer($customer);
 
             $products = [];
-            foreach ($request->cart as $item) {
-                // Handling multiple possible key names from frontend
-                $price = $item['fixed_price'] ?? $item['price'] ?? 0;
-                $making = $item['making_charges'] ?? $item['making'] ?? 0;
-                $quantity = (int)($item['quantity'] ?? 1);
-                
-                $unitPrice = (float)$price + (float)$making;
+            $calculatedTotal = 0;
 
-                // Image handling
+            foreach ($request->cart as $item) {
+                // Frontend se aane wali prices ko handle karna
+                $price = floatval($item['fixed_price'] ?? $item['price'] ?? 0);
+                $making = floatval($item['making_charges'] ?? 0);
+                $qty = intval($item['quantity'] ?? 1);
+
+                $unitPrice = $price + $making;
+                $calculatedTotal += ($unitPrice * $qty);
+
                 $img = $item['image'] ?? '';
-                $imageUrl = filter_var($img, FILTER_VALIDATE_URL) 
-                            ? $img 
-                            : "https://gold-silver-jewellers-production.up.railway.app/storage/" . $img;
+                $imageUrl = filter_var($img, FILTER_VALIDATE_URL)
+                    ? $img
+                    : "https://gold-silver-jewellers-production.up.railway.app/storage/" . $img;
 
                 $products[] = [
                     "id"                => (string)($item['id'] ?? rand(100, 999)),
                     "name"              => (string)($item['name'] ?? "Jewelry Item"),
-                    "sku"               => "GSJ-" . ($item['id'] ?? rand(1, 50)),
-                    "quantity"          => $quantity,
-                    "price"             => $unitPrice,
-                    "sale_price"        => $unitPrice,
+                    "sku"               => "GSJ-PRD-" . ($item['id'] ?? rand(1, 100)),
+                    "quantity"          => $qty,
+                    "price"             => round($unitPrice, 2),
+                    "sale_price"        => round($unitPrice, 2),
                     "discount"          => 0,
                     "image"             => $imageUrl,
-                    "description"       => ($item['name'] ?? "Jewelry") . " - Premium Selection",
-                    "short_description" => "Handcrafted Jewelry" // Required field
+                    "description"       => (string)($item['name'] ?? "Jewelry"),
+                    "short_description" => "Premium Jewelry"
                 ];
             }
-            
+
             $orderSDK->setCartItems($products);
+
+            // ZAROORI: Agar backend ka calculated total frontend ke total se match nahi kar raha
+            // to hum bSecure ko wahi total bhejenge jo backend ne calculate kiya hai taake mismatch na ho.
+
             $result = $orderSDK->createOrder();
 
             if (isset($result['body']['checkout_url'])) {
-                // Database Entry
-                Order::create([
+                // DB Save
+                \App\Models\Order::create([
                     'order_id'        => $merchantOrderId,
                     'order_reference' => $result['body']['order_reference'] ?? null,
                     'customer_email'  => $request->email,
-                    'total_amount'    => $request->total,
+                    'total_amount'    => $calculatedTotal, // Use backend calculated total
                     'status'          => 'pending',
                     'cart_details'    => $request->cart,
                 ]);
@@ -78,14 +83,16 @@ class PaymentController extends Controller
                 return response()->json([
                     'success'      => true,
                     'checkout_url' => $result['body']['checkout_url'],
-                    'order_ref'    => $result['body']['order_reference'] ?? null
                 ], 200);
             }
 
-            return response()->json(['success' => false, 'details' => $result], 400);
-
+            return response()->json([
+                'success' => false,
+                'message' => 'bSecure Rejected Order',
+                'details' => $result
+            ], 400);
         } catch (\Exception $e) {
-            Log::error('bSecure Error Trace: ' . $e->getMessage());
+            Log::error('bSecure SDK Error: ' . $e->getMessage());
             return response()->json(['success' => false, 'error' => $e->getMessage()], 500);
         }
     }
