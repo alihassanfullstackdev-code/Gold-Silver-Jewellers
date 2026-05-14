@@ -10,18 +10,22 @@ import { BrowserRouter, Routes, Route, useLocation, Navigate } from 'react-route
 import axios from 'axios';
 
 // Context Import
-import { CartProvider, useCart } from './context/CartContext'; 
+import { CartProvider, useCart } from './context/CartContext';
 
 // Components & Pages
 import Loader from './components/Loader';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
-import CartDrawer from './components/CartDrawer'; 
+import CartDrawer from './components/CartDrawer';
 import { Home, Collections, Services, AboutUs, ContactUs, Login, AdminDashboard } from './pages';
 import LiveRates from './pages/LiveRates/LiveRates';
 import Categories from './pages/Categories/Categories';
 import Products from './pages/Products/Products';
-import CartPage from './components/Cart'; 
+import CartPage from './components/Cart';
+
+// --- NEW REDIRECTION COMPONENTS ---
+import OrderSuccess from './components/OrderSuccess';
+import OrderFailed from './components/OrderFailed';
 
 // API URL from env
 const API_URL = import.meta.env.VITE_API_BASE_URL;
@@ -72,11 +76,6 @@ function MainApp() {
   }, [isLoading]);
 
   return (
-    /* THEME UPDATE: 
-       - Background: Rich Obsidian Black (#050505)
-       - Text: Champagne Pearl (#FAFAFA)
-       - Selection: Champagne Gold (#E5C787)
-    */
     <main className="min-h-screen bg-[#050505] text-[#FAFAFA] selection:bg-[#E5C787] selection:text-[#050505] transition-opacity duration-700">
 
       <AnimatePresence mode="wait">
@@ -100,6 +99,11 @@ function MainApp() {
             <Route path="/cart" element={<CartPage />} />
             <Route path="/login" element={<Login />} />
 
+            {/* --- bSecure Redirection Routes --- */}
+            <Route path="/order-success" element={<OrderSuccess />} />
+            <Route path="/order-failed" element={<OrderFailed />} />
+
+            {/* Admin Protected Routes */}
             <Route path="/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>}>
               <Route path="rates" element={<LiveRates />} />
               <Route path="categories" element={<Categories />} />
@@ -111,15 +115,10 @@ function MainApp() {
         {!isAdminPage && <Footer />}
       </div>
 
-      {/* THEME UPDATE: Aesthetic Champagne Gold Ambient Glow */}
+      {/* Aesthetic Champagne Gold Ambient Glow */}
       <div className="pointer-events-none fixed inset-0 z-[-1] overflow-hidden">
-        {/* Soft Top Left Glow */}
         <div className="absolute left-[-5%] top-[-5%] h-[500px] w-[500px] rounded-full bg-[#E5C787]/5 blur-[100px]" />
-        
-        {/* Deep Bottom Right Glow */}
         <div className="absolute right-[-2%] bottom-[-2%] h-[600px] w-[600px] rounded-full bg-[#E5C787]/3 blur-[130px]" />
-        
-        {/* Subtle Luxury Texture (Grain) */}
         <div className="absolute inset-0 bg-[url('/grain.png')] opacity-[0.02] mix-blend-overlay" />
       </div>
     </main>
