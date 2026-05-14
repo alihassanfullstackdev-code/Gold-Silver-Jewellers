@@ -5,53 +5,89 @@ import { Link } from 'react-router-dom';
 import { useState } from 'react';
 import axios from 'axios';
 
-interface CartItem {
-  id: number;
-  name: string;
-  image: string;
-  metal_type: string;
-  fixed_price: number;
-  making_charges: number;
-  quantity: number;
-  sku?: string;
-}
+// --- NEW COMPONENT: CHECKOUT MODAL ---
+// Ise aap alag file mein bhi rakh sakte hain ya isi file mein upar define kar dein
+const CheckoutModal = ({ isOpen, onClose, onSubmit, loading, total }: any) => {
+  const [formData, setFormData] = useState({ name: '', email: '', phone: '', address: '' });
 
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-[999] flex items-center justify-center bg-black/90 backdrop-blur-md p-4">
+      <motion.div 
+        initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
+        className="w-full max-w-md border border-gold/20 bg-[#080808] p-8 shadow-2xl relative"
+      >
+        <button onClick={onClose} className="absolute top-4 right-4 text-white/40 hover:text-gold transition-colors">✕</button>
+        <h2 className="font-serif text-2xl tracking-[0.2em] text-gold mb-8 text-center uppercase">Shipping Details</h2>
+        
+        <form onSubmit={(e) => { e.preventDefault(); onSubmit(formData); }} className="space-y-6">
+          <input
+            type="text" placeholder="FULL NAME" required
+            className="w-full bg-transparent border-b border-white/10 py-3 text-xs tracking-widest text-white outline-none focus:border-gold transition-all"
+            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+          />
+          <div className="grid grid-cols-2 gap-4">
+            <input
+              type="email" placeholder="EMAIL" required
+              className="w-full bg-transparent border-b border-white/10 py-3 text-xs tracking-widest text-white outline-none focus:border-gold transition-all"
+              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+            />
+            <input
+              type="text" placeholder="PHONE" required
+              className="w-full bg-transparent border-b border-white/10 py-3 text-xs tracking-widest text-white outline-none focus:border-gold transition-all"
+              onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+            />
+          </div>
+          <textarea
+            placeholder="COMPLETE ADDRESS" required rows={3}
+            className="w-full bg-transparent border-b border-white/10 py-3 text-xs tracking-widest text-white outline-none focus:border-gold transition-all resize-none"
+            onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+          />
+
+          <button
+            type="submit" disabled={loading}
+            className="w-full bg-gold py-4 text-[10px] font-bold uppercase tracking-[0.3em] text-black hover:bg-white transition-all duration-500 flex justify-center items-center gap-2"
+          >
+            {loading ? <Loader2 className="animate-spin" size={16} /> : `Confirm & Pay PKR ${total.toLocaleString()}`}
+          </button>
+        </form>
+      </motion.div>
+    </div>
+  );
+};
+
+// --- MAIN CART COMPONENT ---
 export default function Cart() {
   const { cartItems, removeFromCart, updateQuantity } = useCart();
   const [loading, setLoading] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   
-  // Railway API URL from your .env
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
-  // Total Calculation: (Fixed + Making) * Quantity
-  const subtotal = cartItems.reduce((acc: number, item: CartItem) => {
+  const subtotal = cartItems.reduce((acc: number, item: any) => {
     const actualPrice = Number(item.fixed_price || 0) + Number(item.making_charges || 0);
     return acc + (actualPrice * item.quantity);
   }, 0);
 
-  // --- UPDATED PROCEED TO CHECKOUT LOGIC ---
-  const handleCheckout = async () => {
-    if (cartItems.length === 0) return;
-    
+  // --- FINAL CHECKOUT LOGIC WITH MODAL DATA ---
+  const handleFinalSubmit = async (customerDetails: any) => {
     setLoading(true);
     try {
       const response = await axios.post(`${API_BASE_URL}/payment/initiate`, {
         total: subtotal,
-        email: "customer@gmail.com", // Aap auth context se user email le saktay hain
-        name: "Valued Customer",
-        phone: "923001234567",
-        cart: cartItems // Pura array bhej rahay hain for images & quantity
+        ...customerDetails, // Name, Email, Phone, Address yahan se ja raha hai
+        cart: cartItems 
       });
 
       if (response.data.success && response.data.checkout_url) {
-        // Redirection to bSecure
         window.location.href = response.data.checkout_url;
       } else {
         alert("Checkout Error: " + (response.data.message || "Failed to initiate."));
       }
     } catch (error: any) {
-      console.error("API Connection Error:", error);
-      alert(error.response?.data?.message || "Could not connect to Railway server. Check your internet or CORS settings.");
+      console.error("API Error:", error);
+      alert("Could not connect to server.");
     } finally {
       setLoading(false);
     }
@@ -59,6 +95,16 @@ export default function Cart() {
 
   return (
     <div className="min-h-screen bg-[#030303] text-white pt-40 pb-20 px-6 font-sans">
+      
+      {/* CHECKOUT MODAL INTEGRATION */}
+      <CheckoutModal 
+        isOpen={isModalOpen} 
+        onClose={() => setIsModalOpen(false)} 
+        onSubmit={handleFinalSubmit}
+        loading={loading}
+        total={subtotal}
+      />
+
       <div className="max-w-5xl mx-auto">
         <header className="mb-16 border-b border-white/5 pb-8 flex justify-between items-end">
           <div>
@@ -79,24 +125,17 @@ export default function Cart() {
           </div>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-16">
-            {/* Cart Items List */}
             <div className="lg:col-span-2 space-y-8">
               <AnimatePresence mode="popLayout">
-                {cartItems.map((item: CartItem) => (
+                {cartItems.map((item: any) => (
                   <motion.div
-                    key={item.id}
-                    layout
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, x: -20 }}
+                    key={item.id} layout
+                    initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, x: -20 }}
                     className="flex gap-6 border-b border-white/5 pb-8 group"
                   >
-                    {/* Image handling based on path */}
                     <div className="w-24 h-32 md:w-32 md:h-40 bg-[#080808] border border-white/10 overflow-hidden">
                       <img 
-                        src={item.image?.startsWith('http') 
-                          ? item.image 
-                          : `${API_BASE_URL.replace('/api', '')}/storage/${item.image}`} 
+                        src={item.image?.startsWith('http') ? item.image : `${API_BASE_URL.replace('/api', '')}/storage/${item.image}`} 
                         className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-700" 
                         alt={item.name}
                       />
@@ -129,7 +168,6 @@ export default function Cart() {
               </AnimatePresence>
             </div>
 
-            {/* Summary Panel */}
             <div className="lg:col-span-1">
               <div className="bg-[#080808] border border-white/5 p-8 sticky top-40 space-y-8 backdrop-blur-sm">
                 <h4 className="font-serif text-xl border-b border-white/5 pb-4">Order Summary</h4>
@@ -148,33 +186,18 @@ export default function Cart() {
                   <span className="text-gold">PKR {subtotal.toLocaleString()}</span>
                 </div>
                 
-                {/* CHECKOUT BUTTON */}
                 <button 
-                  onClick={handleCheckout}
+                  onClick={() => setIsModalOpen(true)} // Modal open karne ke liye
                   disabled={loading || cartItems.length === 0}
-                  className="w-full py-5 bg-gold text-black font-bold text-[10px] uppercase tracking-[0.3em] hover:bg-white transition-all duration-500 flex justify-center items-center gap-2 disabled:opacity-50 group"
+                  className="w-full py-5 bg-gold text-black font-bold text-[10px] uppercase tracking-[0.3em] hover:bg-white transition-all duration-500 flex justify-center items-center gap-2 group"
                 >
-                  {loading ? (
-                    <>
-                      <Loader2 size={16} className="animate-spin" />
-                      Securing Session...
-                    </>
-                  ) : (
-                    <>
-                      <ShieldCheck size={16} className="group-hover:text-emerald-600 transition-colors" />
-                      Proceed to Checkout
-                    </>
-                  )}
+                   <ShieldCheck size={16} className="group-hover:text-emerald-600 transition-colors" />
+                   Proceed to Checkout
                 </button>
 
-                <div className="space-y-2">
-                   <p className="text-[8px] text-white/20 uppercase tracking-[0.2em] text-center italic">
-                    Handcrafted in Pakistan.
-                  </p>
-                  <div className="flex justify-center gap-4 opacity-20 grayscale">
-                    {/* Aap yahan cards/payment icons add kar saktay hain */}
-                  </div>
-                </div>
+                <p className="text-[8px] text-white/20 uppercase tracking-[0.2em] text-center italic">
+                  Handcrafted in Pakistan.
+                </p>
               </div>
             </div>
           </div>
