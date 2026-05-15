@@ -37,10 +37,10 @@ return [
 
     // --- SAFEPAY CREDENTIALS ---
     'safepay' => [
-        'public_key' => env('SAFEPAY_PUBLIC_KEY'),
-        'secret_key' => env('SAFEPAY_SECRET_KEY'),
+        'public_key'     => env('SAFEPAY_PUBLIC_KEY'),
+        'secret_key'     => env('SAFEPAY_SECRET_KEY'),
         'webhook_secret' => env('SAFEPAY_WEBHOOK_SECRET'),
-        'env'        => env('SAFEPAY_ENVIRONMENT', 'sandbox'),
+        'env'            => env('SAFEPAY_ENVIRONMENT', 'sandbox'),
     ],
 
 ];

@@ -12,6 +12,7 @@ class SafePayController extends Controller
 {
     public function createTracker(Request $request)
     {
+        // 1. Validation
         $request->validate([
             'total'   => 'required|numeric',
             'name'    => 'required|string',
@@ -22,31 +23,33 @@ class SafePayController extends Controller
         ]);
 
         try {
-            // SDK v1.0.0 initialization with Webhook Secret
+            // 2. SDK v1.0.0 Initialization
+            // Humne teeno secret properties ko fill kiya hai taake SDK crash na kare
             $safepay = new Safepay([
                 'environment'   => config('services.safepay.env'),
                 'apiKey'        => config('services.safepay.public_key'),
                 'vCode'         => config('services.safepay.secret_key'),
-                'webhookSecret' => config('services.safepay.webhook_secret'), // Ab ye error nahi dega
+                'webhookSecret' => config('services.safepay.webhook_secret'),
+                'v1Secret'      => config('services.safepay.webhook_secret'), 
             ]); 
 
-            // Creating the payment tracker
+            // 3. Payment Tracker Create Karein
             $response = $safepay->payments->create([
                 'amount'   => (float)$request->total,
                 'currency' => 'PKR',
             ]);
 
-            // Token extraction
+            // 4. Token Check
             $token = $response['token'] ?? null;
 
             if (!$token) {
-                Log::error('Safepay Token Missing:', (array)$response);
-                return response()->json(['success' => false, 'message' => 'Token not found'], 400);
+                Log::error('Safepay Token Missing Response:', (array)$response);
+                return response()->json(['success' => false, 'message' => 'Safepay token generate nahi ho saka'], 400);
             }
 
             $merchantOrderId = 'GSJ-' . time();
 
-            // Database Entry (Cart ko JSON string mein convert karna behtar hai)
+            // 5. Database mein Order Save Karein
             Order::create([
                 'order_id'         => $merchantOrderId,
                 'order_reference'  => $token, 
@@ -56,10 +59,10 @@ class SafePayController extends Controller
                 'customer_address' => $request->address,
                 'total_amount'     => $request->total,
                 'status'           => 'pending',
-                'cart_details'     => json_encode($request->cart),
+                'cart_details'     => json_encode($request->cart), // Array ko JSON string banaya
             ]);
 
-            // Checkout URL generation
+            // 6. Checkout URL Build Karein
             $baseUrl = config('services.safepay.env') === 'sandbox' 
                        ? "https://sandbox.api.safepay.pk/checkout/pay" 
                        : "https://api.safepay.pk/checkout/pay";
@@ -81,7 +84,7 @@ class SafePayController extends Controller
             ]);
 
         } catch (\Exception $e) {
-            Log::error('Safepay Direct Tracker Error: ' . $e->getMessage());
+            Log::error('Safepay Final Fix Error: ' . $e->getMessage());
             return response()->json([
                 'success' => false, 
                 'error'   => 'Technical Error: ' . $e->getMessage()
