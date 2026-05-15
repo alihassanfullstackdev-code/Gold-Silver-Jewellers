@@ -15,27 +15,28 @@ class PaymentController extends Controller
      */
     public function initiatePayment(Request $request)
     {
+        // Validation mein naye fields lazmi karein
         $request->validate([
-            'total' => 'required|numeric',
-            'email' => 'required|email',
-            'cart'  => 'required|array',
+            'total'   => 'required|numeric',
+            'email'   => 'required|email',
+            'name'    => 'required|string',
+            'phone'   => 'required',
+            'address' => 'required',
+            'cart'    => 'required|array',
         ]);
 
         try {
             $orderSDK = new BsecureCheckout();
             $merchantOrderId = 'GSJ-' . time();
-
-            // Configuration - Sirf wahi use karein jo 100% support ho rahi hain
             $orderSDK->setOrderId($merchantOrderId);
 
-            // Note: setCallbackUrl aur setMerchantId remove kar di hain kyunki SDK support nahi kar raha.
-            // Redirect URL ab aapne bSecure Dashboard (Portal) mein "Integration Settings" se set karni hai.
-
+            // bSecure ko asli data bhejien
             $customer = [
-                "name"         => $request->name ?? "Valued Customer",
+                "name"         => $request->name,
                 "email"        => $request->email,
                 "country_code" => "92",
-                "phone_number" => $request->phone ?? "3001234567",
+                "phone_number" => $request->phone,
+                "address"      => $request->address,
             ];
             $orderSDK->setCustomer($customer);
 
@@ -46,9 +47,9 @@ class PaymentController extends Controller
                 $unitPrice = $price + $making;
 
                 $products[] = [
-                    "id"                => (string)($item['id'] ?? rand(100, 999)),
-                    "name"              => (string)($item['name'] ?? "Jewelry"),
-                    "sku"               => "GSJ-" . ($item['id'] ?? rand(1, 100)),
+                    "id"                => (string)($item['id']),
+                    "name"              => (string)($item['name']),
+                    "sku"               => "GSJ-" . ($item['id']),
                     "quantity"          => (int)($item['quantity'] ?? 1),
                     "price"             => $unitPrice,
                     "sale_price"        => $unitPrice,
@@ -62,15 +63,18 @@ class PaymentController extends Controller
             $orderSDK->setCartItems($products);
             $result = $orderSDK->createOrder();
 
-            // SDK response check
             if (isset($result['body']['checkout_url'])) {
+                // --- FIXED AREA: Database mein saara data bhejien ---
                 Order::create([
-                    'order_id'        => $merchantOrderId,
-                    'order_reference' => $result['body']['order_reference'] ?? null,
-                    'customer_email'  => $request->email,
-                    'total_amount'    => $request->total,
-                    'status'          => 'pending',
-                    'cart_details'    => $request->cart,
+                    'order_id'         => $merchantOrderId,
+                    'order_reference'  => $result['body']['order_reference'] ?? null,
+                    'customer_name'    => $request->name,    // Pehle ye missing tha
+                    'customer_email'   => $request->email,
+                    'customer_phone'   => $request->phone,   // Pehle ye missing tha
+                    'customer_address' => $request->address, // Pehle ye missing tha
+                    'total_amount'     => $request->total,
+                    'status'           => 'pending',
+                    'cart_details'     => $request->cart,
                 ]);
 
                 return response()->json([
@@ -95,26 +99,19 @@ class PaymentController extends Controller
      */
     public function verifyPayment(Request $request)
     {
-        Log::info('bSecure Callback Data Received:', $request->all());
-
         try {
-            // Support both potential query keys
             $order_ref = $request->query('order_ref') ?? $request->query('order_reference');
 
             if (!$order_ref) {
-                Log::warning('Verification failed: No order reference.');
                 return redirect('https://silvergoldjewellers.vercel.app/order-failed?error=no_ref');
             }
 
             $orderStatusUpdate = new BsecureCheckout();
             $result = $orderStatusUpdate->orderStatusUpdates($order_ref);
 
-            Log::info('bSecure Status API Response:', ['result' => $result]);
-
             $localOrder = Order::where('order_reference', $order_ref)->first();
             $status = $result['body']['placement_status'] ?? null;
 
-            // Status 3 means order has been successfully placed
             if ($status == "3" || $status == 3) {
                 if ($localOrder) {
                     $localOrder->update(['status' => 'completed']);
@@ -122,7 +119,6 @@ class PaymentController extends Controller
                 return redirect('https://silvergoldjewellers.vercel.app/order-success?ref=' . $order_ref);
             }
 
-            // If not successful, update as failed
             if ($localOrder) {
                 $localOrder->update(['status' => 'failed']);
             }
