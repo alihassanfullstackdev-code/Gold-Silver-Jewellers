@@ -22,44 +22,40 @@ class SafePayController extends Controller
         ]);
 
         try {
-            $env = config('services.safepay.env');
+            $env = config('services.safepay.env'); // sandbox
             $apiKey = config('services.safepay.public_key');
 
-            // UPDATE: Naya Endpoint jo resolve hoga
-            $apiUrl = ($env === 'sandbox') 
-                ? "https://sandbox.api.safepay.pk/v1/tracker" 
-                : "https://api.safepay.pk/v1/tracker";
+            // Bypassing the "sandbox." prefix to avoid DNS resolution errors
+            // Safepay handles environment via the payload
+            $apiUrl = "https://api.safepay.pk/v1/tracker";
 
-            // Direct API Call
             $response = Http::withHeaders([
                 'Accept' => 'application/json',
             ])->post($apiUrl, [
-                'client'   => $apiKey,
-                'amount'   => (float)$request->total,
-                'currency' => 'PKR',
-                'environment' => $env
+                'client'      => $apiKey,
+                'amount'      => (float)$request->total,
+                'currency'    => 'PKR',
+                'environment' => $env // Yahan 'sandbox' jayega
             ]);
 
-            // Agar domain resolve na ho ya koi aur masla ho
             if (!$response->successful()) {
                 Log::error('Safepay API Failed:', [
                     'status' => $response->status(),
                     'body' => $response->json()
                 ]);
-                return response()->json(['success' => false, 'message' => 'Safepay API se rabta nahi ho saka'], 400);
+                return response()->json(['success' => false, 'message' => 'Safepay API Response Error'], 400);
             }
 
             $data = $response->json();
-            // Safepay ka naya response structure aksar direct data deta hai
             $token = $data['data']['token'] ?? $data['token'] ?? null;
 
             if (!$token) {
-                return response()->json(['success' => false, 'message' => 'Token generation failed'], 400);
+                return response()->json(['success' => false, 'message' => 'Token not found in response'], 400);
             }
 
             $merchantOrderId = 'GSJ-' . time();
 
-            // Order Save Karein
+            // Database Entry
             Order::create([
                 'order_id'         => $merchantOrderId,
                 'order_reference'  => $token, 
@@ -72,7 +68,7 @@ class SafePayController extends Controller
                 'cart_details'     => json_encode($request->cart),
             ]);
 
-            // Checkout Page URL (Ye wahi rahega)
+            // Checkout URL - Agar sandbox hai toh sandbox subdomain use karein redirection ke liye
             $checkoutBaseUrl = ($env === 'sandbox') 
                 ? "https://sandbox.api.safepay.pk/checkout/pay" 
                 : "https://api.safepay.pk/checkout/pay";
@@ -94,8 +90,8 @@ class SafePayController extends Controller
             ]);
 
         } catch (\Exception $e) {
-            Log::error('Safepay Direct API Error: ' . $e->getMessage());
-            return response()->json(['success' => false, 'error' => 'Connection Error: ' . $e->getMessage()], 500);
+            Log::error('Safepay Final API Error: ' . $e->getMessage());
+            return response()->json(['success' => false, 'error' => 'Network Error: ' . $e->getMessage()], 500);
         }
     }
 }
