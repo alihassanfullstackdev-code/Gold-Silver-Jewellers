@@ -35,4 +35,11 @@ return [
         ],
     ],
 
+    // --- SAFEPAY CREDENTIALS ---
+    'safepay' => [
+        'public_key' => env('SAFEPAY_PUBLIC_KEY'),
+        'secret_key' => env('SAFEPAY_SECRET_KEY'),
+        'env'        => env('SAFEPAY_ENVIRONMENT', 'sandbox'),
+    ],
+
 ];
