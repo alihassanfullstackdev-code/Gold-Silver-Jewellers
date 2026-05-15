@@ -22,30 +22,31 @@ class SafePayController extends Controller
         ]);
 
         try {
-            // SDK v1.0.0 ke liye direct Tracker initialize karein
+            // SDK v1.0.0 initialization with Webhook Secret
             $safepay = new Safepay([
-                'environment' => config('services.safepay.env'),
-                'apiKey'      => config('services.safepay.public_key'),
-                'vCode'       => config('services.safepay.secret_key'),
+                'environment'   => config('services.safepay.env'),
+                'apiKey'        => config('services.safepay.public_key'),
+                'vCode'         => config('services.safepay.secret_key'),
+                'webhookSecret' => config('services.safepay.webhook_secret'), // Ab ye error nahi dega
             ]); 
 
-            // Direct create method call
+            // Creating the payment tracker
             $response = $safepay->payments->create([
                 'amount'   => (float)$request->total,
                 'currency' => 'PKR',
             ]);
 
-            // Response check karein
+            // Token extraction
             $token = $response['token'] ?? null;
 
             if (!$token) {
-                Log::error('Safepay Token Missing:', $response);
+                Log::error('Safepay Token Missing:', (array)$response);
                 return response()->json(['success' => false, 'message' => 'Token not found'], 400);
             }
 
             $merchantOrderId = 'GSJ-' . time();
 
-            // Database Entry
+            // Database Entry (Cart ko JSON string mein convert karna behtar hai)
             Order::create([
                 'order_id'         => $merchantOrderId,
                 'order_reference'  => $token, 
@@ -55,10 +56,10 @@ class SafePayController extends Controller
                 'customer_address' => $request->address,
                 'total_amount'     => $request->total,
                 'status'           => 'pending',
-                'cart_details'     => $request->cart,
+                'cart_details'     => json_encode($request->cart),
             ]);
 
-            // Checkout URL setup
+            // Checkout URL generation
             $baseUrl = config('services.safepay.env') === 'sandbox' 
                        ? "https://sandbox.api.safepay.pk/checkout/pay" 
                        : "https://api.safepay.pk/checkout/pay";
