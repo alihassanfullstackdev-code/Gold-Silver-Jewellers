@@ -7,6 +7,7 @@ use App\Http\Controllers\Rate\MetalRateController;
 use App\Http\Controllers\Category\CategoryController;
 use App\Http\Controllers\Product\ProductController;
 use App\Http\Controllers\Api\PaymentController;
+use App\Http\Controllers\Api\SafePayController;
 
 // Ensure ye line wahan mojud ho
 Route::get('/connection-test', function () {
@@ -24,3 +25,6 @@ Route::post('/payment/initiate', [PaymentController::class, 'initiatePayment']);
 
 // bSecure wapas is par redirect karega
 Route::any('/payment/verify', [PaymentController::class, 'verifyPayment']);
+
+// SafePay Route
+Route::post('/safepay/create-tracker', [SafePayController::class, 'createTracker']);
