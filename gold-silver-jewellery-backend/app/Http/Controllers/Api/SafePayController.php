@@ -12,6 +12,7 @@ class SafePayController extends Controller
 {
     public function createTracker(Request $request)
     {
+        // Validation same rahegi
         $request->validate([
             'total'   => 'required|numeric',
             'name'    => 'required|string',
@@ -22,63 +23,62 @@ class SafePayController extends Controller
         ]);
 
         try {
-            // DIRECT ENV SE UTHTE HAIN - NO LARAVEL CONFIG ISSUES
             $env = env('SAFEPAY_ENVIRONMENT', 'sandbox'); 
-            $apiKey = env('SAFEPAY_PUBLIC_KEY');
+            $secretKey = env('SAFEPAY_SECRET_KEY'); // Ab Secret Key chahiye Header ke liye
+            
+            // Ek unique tracker ID ya time-based token fake dynamic track banane ke liye
+            $merchantOrderId = 'GSJ-' . time();
 
+            // v3 API Endpoint Setup (Naya format)
             $apiUrl = ($env === 'sandbox') 
-                ? "https://sandbox.api.getsafepay.com/v1/tracker" 
-                : "https://api.getsafepay.com/v1/tracker";
+                ? "https://sandbox.api.getsafepay.com/order/payments/v3/" . $merchantOrderId
+                : "https://api.getsafepay.com/order/payments/v3/" . $merchantOrderId;
 
-            // STRICT JSON PAYLOAD FOR SAFEPAY
+            // Nayi Docs ke mutabiq authentic payload layout
             $response = Http::withHeaders([
                 'Accept' => 'application/json',
                 'Content-Type' => 'application/json',
+                'X-SFPY-MERCHANT-SECRET' => trim($secretKey) // Custom Secret Key Header
             ])->post($apiUrl, [
-                'client'      => trim($apiKey),
-                'amount'      => (int)$request->total, // Safepay integration baaz dafa integer pasand karti hai
-                'currency'    => 'PKR',
-                'environment' => trim($env)
+                'payload' => [
+                    'payment_method' => [
+                        'card' => [
+                            // Abhi hum dummy testing details bhej rahe hain sandbox verification ke liye
+                            'card_number'      => "5200000000001096", // Default Test Card
+                            'expiration_month' => "12",
+                            'expiration_year'  => "2028",
+                            'cvv'              => "123"
+                        ]
+                    ]
+                ]
             ]);
 
-            // Agar response 200 na ho (400/500/401)
+            // Agar gateway response crash ho
             if (!$response->successful()) {
-                Log::error('Safepay API Failed:', [
+                Log::error('Safepay v3 API Failed:', [
                     'status' => $response->status(),
                     'body' => $response->json() ?? $response->body()
                 ]);
                 return response()->json([
                     'success' => false, 
-                    'message' => 'Safepay API Failed to Respond',
-                    'safepay_status' => $response->status(),
-                    'safepay_error_raw' => $response->body() // Raw text dikhane ke liye agar JSON null ho
+                    'message' => 'Safepay v3 API Response Error',
+                    'status_received' => $response->status(),
+                    'error_details' => $response->json() ?? $response->body()
                 ], 400);
             }
 
-            // Agar response successful (200) hai par body khali ho
-            $rawBody = $response->body();
             $data = $response->json();
-
-            if (empty($data)) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Safepay returned an empty body with 200 OK status.',
-                    'raw_body_received' => $rawBody,
-                    'debug_key_used' => substr($apiKey, 0, 10) . '...' // Sirf verify karne ke liye ke key empty to nahi ja rahi
-                ], 400);
-            }
             
-            $token = $data['data']['token'] ?? $data['token'] ?? $data['data']['tracker']['token'] ?? null;
+            // Nayi Docs ke response JSON ke mutabiq token uthana: data.tracker.token
+            $token = $data['data']['tracker']['token'] ?? null;
 
             if (!$token) {
                 return response()->json([
                     'success' => false, 
-                    'message' => 'Token field missing in structured response',
+                    'message' => 'Tracker Token missing in v3 response structure',
                     'raw_safepay_response' => $data
                 ], 400);
             }
-
-            $merchantOrderId = 'GSJ-' . time();
 
             // Database Entry
             Order::create([
@@ -93,13 +93,14 @@ class SafePayController extends Controller
                 'cart_details'     => json_encode($request->cart),
             ]);
 
+            // Checkout redirection Base URL for v3 
             $checkoutBaseUrl = ($env === 'sandbox') 
                 ? "https://sandbox.api.getsafepay.com/checkout/pay" 
                 : "https://api.getsafepay.com/checkout/pay";
 
             $checkoutUrl = $checkoutBaseUrl . "?" . http_build_query([
                 'beacon'       => $token,
-                'pk'           => $apiKey,
+                'pk'           => env('SAFEPAY_PUBLIC_KEY'),
                 'amount'       => $request->total,
                 'currency'     => 'PKR',
                 'track'        => $merchantOrderId,
@@ -111,11 +112,12 @@ class SafePayController extends Controller
             return response()->json([
                 'success'      => true,
                 'checkout_url' => $checkoutUrl,
+                'tracker_token'=> $token
             ]);
 
         } catch (\Exception $e) {
-            Log::error('Safepay Final API Error: ' . $e->getMessage());
-            return response()->json(['success' => false, 'error' => 'Network Error: ' . $e->getMessage()], 500);
+            Log::error('Safepay v3 API Exception: ' . $e->getMessage());
+            return response()->json(['success' => false, 'error' => 'Network Exception: ' . $e->getMessage()], 500);
         }
     }
 }
