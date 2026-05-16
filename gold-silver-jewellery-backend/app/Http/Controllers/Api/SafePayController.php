@@ -12,7 +12,6 @@ class SafePayController extends Controller
 {
     public function createTracker(Request $request)
     {
-        // Validation same rahegi
         $request->validate([
             'total'   => 'required|numeric',
             'name'    => 'required|string',
@@ -24,44 +23,32 @@ class SafePayController extends Controller
 
         try {
             $env = env('SAFEPAY_ENVIRONMENT', 'sandbox'); 
-            $secretKey = env('SAFEPAY_SECRET_KEY'); // Ab Secret Key chahiye Header ke liye
-            
-            // Ek unique tracker ID ya time-based token fake dynamic track banane ke liye
-            $merchantOrderId = 'GSJ-' . time();
+            $apiKey = env('SAFEPAY_PUBLIC_KEY');
 
-            // v3 API Endpoint Setup (Naya format)
+            // Standard Active API Endpoint jo getsafepay.com par active hai
             $apiUrl = ($env === 'sandbox') 
-                ? "https://sandbox.api.getsafepay.com/order/payments/v3/" . $merchantOrderId
-                : "https://api.getsafepay.com/order/payments/v3/" . $merchantOrderId;
+                ? "https://sandbox.api.getsafepay.com/order/v1/init" 
+                : "https://api.getsafepay.com/order/v1/init";
 
-            // Nayi Docs ke mutabiq authentic payload layout
+            // Safepay standard payload structure
             $response = Http::withHeaders([
                 'Accept' => 'application/json',
                 'Content-Type' => 'application/json',
-                'X-SFPY-MERCHANT-SECRET' => trim($secretKey) // Custom Secret Key Header
             ])->post($apiUrl, [
-                'payload' => [
-                    'payment_method' => [
-                        'card' => [
-                            // Abhi hum dummy testing details bhej rahe hain sandbox verification ke liye
-                            'card_number'      => "5200000000001096", // Default Test Card
-                            'expiration_month' => "12",
-                            'expiration_year'  => "2028",
-                            'cvv'              => "123"
-                        ]
-                    ]
-                ]
+                'client'      => trim($apiKey),
+                'amount'      => (float)$request->total,
+                'currency'    => 'PKR',
+                'environment' => trim($env)
             ]);
 
-            // Agar gateway response crash ho
             if (!$response->successful()) {
-                Log::error('Safepay v3 API Failed:', [
+                Log::error('Safepay Standard API Failed:', [
                     'status' => $response->status(),
                     'body' => $response->json() ?? $response->body()
                 ]);
                 return response()->json([
                     'success' => false, 
-                    'message' => 'Safepay v3 API Response Error',
+                    'message' => 'Safepay Standard API Response Error',
                     'status_received' => $response->status(),
                     'error_details' => $response->json() ?? $response->body()
                 ], 400);
@@ -69,16 +56,18 @@ class SafePayController extends Controller
 
             $data = $response->json();
             
-            // Nayi Docs ke response JSON ke mutabiq token uthana: data.tracker.token
-            $token = $data['data']['tracker']['token'] ?? null;
+            // Standard tracking token extract karne ka tree
+            $token = $data['data']['token'] ?? $data['token'] ?? null;
 
             if (!$token) {
                 return response()->json([
                     'success' => false, 
-                    'message' => 'Tracker Token missing in v3 response structure',
+                    'message' => 'Token field missing in standard response structure',
                     'raw_safepay_response' => $data
                 ], 400);
             }
+
+            $merchantOrderId = 'GSJ-' . time();
 
             // Database Entry
             Order::create([
@@ -93,14 +82,14 @@ class SafePayController extends Controller
                 'cart_details'     => json_encode($request->cart),
             ]);
 
-            // Checkout redirection Base URL for v3 
+            // Checkout redirection URL
             $checkoutBaseUrl = ($env === 'sandbox') 
                 ? "https://sandbox.api.getsafepay.com/checkout/pay" 
                 : "https://api.getsafepay.com/checkout/pay";
 
             $checkoutUrl = $checkoutBaseUrl . "?" . http_build_query([
                 'beacon'       => $token,
-                'pk'           => env('SAFEPAY_PUBLIC_KEY'),
+                'pk'           => $apiKey,
                 'amount'       => $request->total,
                 'currency'     => 'PKR',
                 'track'        => $merchantOrderId,
@@ -112,11 +101,10 @@ class SafePayController extends Controller
             return response()->json([
                 'success'      => true,
                 'checkout_url' => $checkoutUrl,
-                'tracker_token'=> $token
             ]);
 
         } catch (\Exception $e) {
-            Log::error('Safepay v3 API Exception: ' . $e->getMessage());
+            Log::error('Safepay API Exception: ' . $e->getMessage());
             return response()->json(['success' => false, 'error' => 'Network Exception: ' . $e->getMessage()], 500);
         }
     }
