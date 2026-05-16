@@ -87,6 +87,7 @@ class SafePayController extends Controller
                 ? "https://sandbox.api.getsafepay.com/checkout/pay" 
                 : "https://api.getsafepay.com/checkout/pay";
 
+            // FIXED: 'env' aur 'environment' parameters ko redirect URL string mein inject kar diya hai
             $checkoutUrl = $checkoutBaseUrl . "?" . http_build_query([
                 'beacon'       => $token,
                 'pk'           => $apiKey,
@@ -94,6 +95,8 @@ class SafePayController extends Controller
                 'currency'     => 'PKR',
                 'track'        => $merchantOrderId,
                 'source'       => 'custom',
+                'env'          => trim($env),
+                'environment'  => trim($env),
                 'cancel_url'   => 'https://silvergoldjewellers.vercel.app/cart',
                 'redirect_url' => 'https://silvergoldjewellers.vercel.app/order-success',
             ]);
