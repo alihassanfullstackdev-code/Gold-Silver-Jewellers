@@ -25,7 +25,7 @@ class SafePayController extends Controller
             $env = config('services.safepay.env'); // sandbox
             $apiKey = config('services.safepay.public_key');
 
-            // 100% FIXED: Naya base URL jo getsafepay.com par chalta hai
+            // ASLI ENDPOINT: Jo terminal ne confirm kiya hai
             $apiUrl = ($env === 'sandbox') 
                 ? "https://sandbox.api.getsafepay.com/v1/tracker" 
                 : "https://api.getsafepay.com/v1/tracker";
@@ -69,7 +69,7 @@ class SafePayController extends Controller
                 'cart_details'     => json_encode($request->cart),
             ]);
 
-            // 100% FIXED: Redirection Checkout URL bhi getsafepay.com par shift kar di hai
+            // ASLI CHECKOUT REDIRECTION URL
             $checkoutBaseUrl = ($env === 'sandbox') 
                 ? "https://sandbox.api.getsafepay.com/checkout/pay" 
                 : "https://api.getsafepay.com/checkout/pay";
