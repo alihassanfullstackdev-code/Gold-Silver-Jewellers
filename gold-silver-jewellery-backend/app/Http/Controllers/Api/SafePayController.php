@@ -25,9 +25,10 @@ class SafePayController extends Controller
             $env = config('services.safepay.env'); // sandbox
             $apiKey = config('services.safepay.public_key');
 
-            // Bypassing the "sandbox." prefix to avoid DNS resolution errors
-            // Safepay handles environment via the payload
-            $apiUrl = "https://api.safepay.pk/v1/tracker";
+            // 100% FIXED: Naya base URL jo getsafepay.com par chalta hai
+            $apiUrl = ($env === 'sandbox') 
+                ? "https://sandbox.api.getsafepay.com/v1/tracker" 
+                : "https://api.getsafepay.com/v1/tracker";
 
             $response = Http::withHeaders([
                 'Accept' => 'application/json',
@@ -35,7 +36,7 @@ class SafePayController extends Controller
                 'client'      => $apiKey,
                 'amount'      => (float)$request->total,
                 'currency'    => 'PKR',
-                'environment' => $env // Yahan 'sandbox' jayega
+                'environment' => $env
             ]);
 
             if (!$response->successful()) {
@@ -68,10 +69,10 @@ class SafePayController extends Controller
                 'cart_details'     => json_encode($request->cart),
             ]);
 
-            // Checkout URL - Agar sandbox hai toh sandbox subdomain use karein redirection ke liye
+            // 100% FIXED: Redirection Checkout URL bhi getsafepay.com par shift kar di hai
             $checkoutBaseUrl = ($env === 'sandbox') 
-                ? "https://sandbox.api.safepay.pk/checkout/pay" 
-                : "https://api.safepay.pk/checkout/pay";
+                ? "https://sandbox.api.getsafepay.com/checkout/pay" 
+                : "https://api.getsafepay.com/checkout/pay";
 
             $checkoutUrl = $checkoutBaseUrl . "?" . http_build_query([
                 'beacon'       => $token,
