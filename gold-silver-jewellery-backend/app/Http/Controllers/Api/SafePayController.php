@@ -22,47 +22,58 @@ class SafePayController extends Controller
         ]);
 
         try {
-            $env = config('services.safepay.env') ?? 'sandbox'; 
-            $apiKey = config('services.safepay.public_key');
+            // DIRECT ENV SE UTHTE HAIN - NO LARAVEL CONFIG ISSUES
+            $env = env('SAFEPAY_ENVIRONMENT', 'sandbox'); 
+            $apiKey = env('SAFEPAY_PUBLIC_KEY');
 
             $apiUrl = ($env === 'sandbox') 
                 ? "https://sandbox.api.getsafepay.com/v1/tracker" 
                 : "https://api.getsafepay.com/v1/tracker";
 
+            // STRICT JSON PAYLOAD FOR SAFEPAY
             $response = Http::withHeaders([
                 'Accept' => 'application/json',
                 'Content-Type' => 'application/json',
             ])->post($apiUrl, [
-                'client'      => $apiKey,
-                'amount'      => (float)$request->total,
+                'client'      => trim($apiKey),
+                'amount'      => (int)$request->total, // Safepay integration baaz dafa integer pasand karti hai
                 'currency'    => 'PKR',
-                'environment' => $env
+                'environment' => trim($env)
             ]);
 
-            // FIXED: Agar gateway response code hit na kare (400/500/401) to direct data idhar dikhao
+            // Agar response 200 na ho (400/500/401)
             if (!$response->successful()) {
                 Log::error('Safepay API Failed:', [
                     'status' => $response->status(),
-                    'body' => $response->json()
+                    'body' => $response->json() ?? $response->body()
                 ]);
                 return response()->json([
                     'success' => false, 
-                    'message' => 'Safepay API Failed to Response',
+                    'message' => 'Safepay API Failed to Respond',
                     'safepay_status' => $response->status(),
-                    'safepay_error' => $response->json()
+                    'safepay_error_raw' => $response->body() // Raw text dikhane ke liye agar JSON null ho
                 ], 400);
             }
 
+            // Agar response successful (200) hai par body khali ho
+            $rawBody = $response->body();
             $data = $response->json();
+
+            if (empty($data)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Safepay returned an empty body with 200 OK status.',
+                    'raw_body_received' => $rawBody,
+                    'debug_key_used' => substr($apiKey, 0, 10) . '...' // Sirf verify karne ke liye ke key empty to nahi ja rahi
+                ], 400);
+            }
             
-            // FIXED: Safepay ke alag alag tracker layouts ke mutabiq token extract karne ka short-shot tarika
             $token = $data['data']['token'] ?? $data['token'] ?? $data['data']['tracker']['token'] ?? null;
 
-            // FIXED: Agar response status 200 hai par token key parse nahi ho saki, toh raw dump dikhao
             if (!$token) {
                 return response()->json([
                     'success' => false, 
-                    'message' => 'Token field missing in successful response structure',
+                    'message' => 'Token field missing in structured response',
                     'raw_safepay_response' => $data
                 ], 400);
             }
