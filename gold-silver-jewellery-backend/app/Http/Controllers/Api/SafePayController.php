@@ -22,16 +22,16 @@ class SafePayController extends Controller
         ]);
 
         try {
-            $env = config('services.safepay.env'); // sandbox
+            $env = config('services.safepay.env') ?? 'sandbox'; 
             $apiKey = config('services.safepay.public_key');
 
-            // ASLI ENDPOINT: Jo terminal ne confirm kiya hai
             $apiUrl = ($env === 'sandbox') 
                 ? "https://sandbox.api.getsafepay.com/v1/tracker" 
                 : "https://api.getsafepay.com/v1/tracker";
 
             $response = Http::withHeaders([
                 'Accept' => 'application/json',
+                'Content-Type' => 'application/json',
             ])->post($apiUrl, [
                 'client'      => $apiKey,
                 'amount'      => (float)$request->total,
@@ -39,19 +39,32 @@ class SafePayController extends Controller
                 'environment' => $env
             ]);
 
+            // FIXED: Agar gateway response code hit na kare (400/500/401) to direct data idhar dikhao
             if (!$response->successful()) {
                 Log::error('Safepay API Failed:', [
                     'status' => $response->status(),
                     'body' => $response->json()
                 ]);
-                return response()->json(['success' => false, 'message' => 'Safepay API Response Error'], 400);
+                return response()->json([
+                    'success' => false, 
+                    'message' => 'Safepay API Failed to Response',
+                    'safepay_status' => $response->status(),
+                    'safepay_error' => $response->json()
+                ], 400);
             }
 
             $data = $response->json();
-            $token = $data['data']['token'] ?? $data['token'] ?? null;
+            
+            // FIXED: Safepay ke alag alag tracker layouts ke mutabiq token extract karne ka short-shot tarika
+            $token = $data['data']['token'] ?? $data['token'] ?? $data['data']['tracker']['token'] ?? null;
 
+            // FIXED: Agar response status 200 hai par token key parse nahi ho saki, toh raw dump dikhao
             if (!$token) {
-                return response()->json(['success' => false, 'message' => 'Token not found in response'], 400);
+                return response()->json([
+                    'success' => false, 
+                    'message' => 'Token field missing in successful response structure',
+                    'raw_safepay_response' => $data
+                ], 400);
             }
 
             $merchantOrderId = 'GSJ-' . time();
@@ -69,7 +82,6 @@ class SafePayController extends Controller
                 'cart_details'     => json_encode($request->cart),
             ]);
 
-            // ASLI CHECKOUT REDIRECTION URL
             $checkoutBaseUrl = ($env === 'sandbox') 
                 ? "https://sandbox.api.getsafepay.com/checkout/pay" 
                 : "https://api.getsafepay.com/checkout/pay";
