@@ -13,5 +13,5 @@ export const sidebarLinks = [
     { label: 'Categories', icon: Layers, path: '/admin/categories' },
     { label: 'Products', icon: Gem, path: '/admin/products' }, 
     { label: 'Orders', icon: ShoppingCart, path: '/admin/orders' },
-    { label: 'Customer Inquiries', icon: MessageSquare, path: '/admin/inquiries' },
+    // { label: 'Customer Inquiries', icon: MessageSquare, path: '/admin/inquiries' },
 ];
