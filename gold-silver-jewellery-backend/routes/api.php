@@ -35,6 +35,6 @@ Route::post('/orders/place-cod', [OrderController::class, 'placeCodOrder']);
 
 // 2. Admin Dashboard API Route: Fetch all orders list execution
 Route::get('orders', [OrderController::class, 'getDashboardOrders']);
-
+Route::delete('/orders/{id}', [OrderController::class, 'deleteOrder']);
 // 3. Admin Dashboard API Route: Update specific execution target reference status 
 Route::put('orders/{id}/status', [OrderController::class, 'updateOrderStatus']);

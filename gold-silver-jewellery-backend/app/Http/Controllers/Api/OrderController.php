@@ -107,6 +107,36 @@ class OrderController extends Controller
     }
 
     /**
+     * Admin Dashboard Endpoint: Hard delete a specific order resource
+     */
+    public function deleteOrder($id)
+    {
+        try {
+            // Check record existence before destroying reference stack
+            $orderExists = DB::table('orders')->where('id', $id)->exists();
+
+            if (!$orderExists) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Order record not found inside database storage.'
+                ], 404);
+            }
+
+            DB::table('orders')->where('id', $id)->delete();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Order destroyed securely from vault.'
+            ], 200);
+        } catch (Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Pipeline failure execution context on deletion.'
+            ], 500);
+        }
+    }
+
+    /**
      * Admin Dashboard Endpoint: Update specific target status
      */
     public function updateOrderStatus(Request $request, $id)

@@ -104,6 +104,29 @@ export default function Orders() {
     }
   };
 
+  // NEW: Secure Deletion Handler Implementation Block
+  const handleDeleteOrder = async (id: number) => {
+    try {
+      const response = await axios.delete(`${API_BASE_URL}/orders/${id}`);
+      
+      if (response.data.success) {
+        // Remove locally from active state array
+        setOrders(prev => prev.filter(o => o.id !== id));
+        
+        // Close sliding drawer context if the active inspection target is purged
+        if (selectedOrder && selectedOrder.id === id) {
+          setSelectedOrder(null);
+        }
+
+        // Re-synchronize pagination values with datastore
+        fetchOrders(pagination.current_page, filterStatus);
+      }
+    } catch (error) {
+      console.error("Deletion telemetry mapping exception:", error);
+      alert("Database constraints or pipeline error prohibited execution.");
+    }
+  };
+
   const handlePageChange = (targetPage: number) => {
     if (targetPage >= 1 && targetPage <= pagination.last_page) {
       fetchOrders(targetPage, filterStatus);
@@ -160,6 +183,7 @@ export default function Orders() {
                     key={order.id} 
                     order={order} 
                     onInspect={() => setSelectedOrder(order)} 
+                    onDelete={handleDeleteOrder}
                   />
                 ))}
               </tbody>

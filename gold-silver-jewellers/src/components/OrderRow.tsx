@@ -1,18 +1,34 @@
-import React from 'react';
-import { Eye } from 'lucide-react';
+import React, { useState } from 'react';
+import { Eye, Trash2, Loader2, AlertTriangle } from 'lucide-react';
 
 interface OrderRowProps {
   order: any;
   onInspect: () => void;
+  onDelete: (id: number) => Promise<void>;
 }
 
-export const OrderRow: React.FC<OrderRowProps> = ({ order, onInspect }) => {
+export const OrderRow: React.FC<OrderRowProps> = ({ order, onInspect, onDelete }) => {
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'completed': return 'bg-emerald-500/5 text-emerald-400 border border-emerald-500/10';
       case 'failed': return 'bg-rose-500/5 text-rose-400 border border-rose-500/10';
       case 'canceled': return 'bg-white/5 text-white/40 border border-white/10';
       default: return 'bg-amber-500/5 text-amber-400 border border-amber-500/10';
+    }
+  };
+
+  const executeDelete = async () => {
+    setIsDeleting(true);
+    try {
+      await onDelete(order.id);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setIsDeleting(false);
+      setShowConfirm(false);
     }
   };
 
@@ -39,12 +55,49 @@ export const OrderRow: React.FC<OrderRowProps> = ({ order, onInspect }) => {
         </span>
       </td>
       <td className="p-4 text-right">
-        <button
-          onClick={onInspect}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-white/10 hover:border-[#E5C787] hover:text-[#E5C787] bg-white/[0.02] hover:bg-[#E5C787]/5 text-[9px] uppercase tracking-widest font-bold transition-all duration-300 rounded"
-        >
-          <Eye size={11} /> Inspect
-        </button>
+        <div className="inline-flex items-center gap-2">
+          
+          {/* Main Action Controllers Stream */}
+          {!showConfirm ? (
+            <>
+              <button
+                onClick={onInspect}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-white/10 hover:border-[#E5C787] hover:text-[#E5C787] bg-white/[0.02] hover:bg-[#E5C787]/5 text-[9px] uppercase tracking-widest font-bold transition-all duration-300 rounded"
+              >
+                <Eye size={11} /> Inspect
+              </button>
+              <button
+                onClick={() => setShowConfirm(true)}
+                className="p-1.5 border border-white/5 hover:border-rose-500/30 text-white/30 hover:text-rose-400 bg-transparent transition-all duration-300 rounded"
+                title="Purge Record"
+              >
+                <Trash2 size={13} />
+              </button>
+            </>
+          ) : (
+            /* Luxury High Speed Inline Confirmation Banner Section */
+            <div className="flex items-center gap-1 bg-rose-950/20 border border-rose-500/20 p-0.5 rounded text-[9px] font-bold uppercase tracking-widest animate-fade-in">
+              <span className="text-rose-400 px-2 flex items-center gap-1">
+                <AlertTriangle size={10} /> Delete?
+              </span>
+              <button
+                disabled={isDeleting}
+                onClick={executeDelete}
+                className="px-2 py-1 bg-rose-500 hover:bg-rose-600 text-white transition-all duration-200 rounded-xs"
+              >
+                {isDeleting ? <Loader2 size={10} className="animate-spin" /> : 'Yes'}
+              </button>
+              <button
+                disabled={isDeleting}
+                onClick={() => setShowConfirm(false)}
+                className="px-2 py-1 bg-white/5 text-white/60 hover:text-white transition-all duration-200 rounded-xs"
+              >
+                No
+              </button>
+            </div>
+          )}
+          
+        </div>
       </td>
     </tr>
   );
