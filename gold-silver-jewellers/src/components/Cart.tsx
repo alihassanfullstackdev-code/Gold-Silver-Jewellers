@@ -1,7 +1,7 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { useCart } from '../context/CartContext';
-import { Trash2, Plus, Minus, ShoppingBag, Loader2, ShieldCheck, X } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Trash2, Plus, Minus, ShoppingBag, Loader2, ShieldCheck, X, Truck } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import axios from 'axios';
 
@@ -31,7 +31,10 @@ const CheckoutModal = ({ isOpen, onClose, onConfirm, loading, subtotal }: any) =
         <button onClick={onClose} className="absolute top-4 right-4 text-white/40 hover:text-gold transition-colors">
           <X size={20} />
         </button>
-        <h2 className="font-serif text-2xl tracking-[0.2em] text-gold mb-8 text-center uppercase">Shipping Details</h2>
+        <h2 className="font-serif text-2xl tracking-[0.2em] text-gold mb-2 text-center uppercase">Shipping Details</h2>
+        <p className="text-[10px] text-center text-white/40 tracking-widest uppercase mb-8 flex items-center justify-center gap-1.5">
+          <Truck size={12} className="text-gold" /> Cash on Delivery (COD)
+        </p>
         
         <form onSubmit={(e) => { e.preventDefault(); onConfirm(details); }} className="space-y-5">
           <input
@@ -61,7 +64,7 @@ const CheckoutModal = ({ isOpen, onClose, onConfirm, loading, subtotal }: any) =
             type="submit" disabled={loading}
             className="w-full bg-gold py-4 text-[10px] font-bold uppercase tracking-[0.3em] text-black hover:bg-white transition-all duration-500 flex justify-center items-center gap-2"
           >
-            {loading ? <Loader2 className="animate-spin" size={16} /> : `Confirm & Pay PKR ${subtotal.toLocaleString()}`}
+            {loading ? <Loader2 className="animate-spin" size={16} /> : `Confirm Order (COD) - PKR ${subtotal.toLocaleString()}`}
           </button>
         </form>
       </motion.div>
@@ -71,9 +74,10 @@ const CheckoutModal = ({ isOpen, onClose, onConfirm, loading, subtotal }: any) =
 
 // --- MAIN CART COMPONENT ---
 export default function Cart() {
-  const { cartItems, removeFromCart, updateQuantity } = useCart();
+  const { cartItems, removeFromCart, updateQuantity, clearCart } = useCart(); // clearCart function agar context mein ho toh destructive actions ke liye best hai
   const [loading, setLoading] = useState(false);
-  const [isModalOpen, setIsModalOpen] = useState(false); // Modal state
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const navigate = useNavigate();
   
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -82,20 +86,25 @@ export default function Cart() {
     return acc + (actualPrice * item.quantity);
   }, 0);
 
-  // --- REPLACED CHECKOUT LOGIC ---
+  // --- UPDATED CASH ON DELIVERY LOGIC ---
   const handleFinalCheckout = async (customerDetails: any) => {
     setLoading(true);
     try {
-      const response = await axios.post(`${API_BASE_URL}/payment/initiate`, {
+      // Ab payment initiation ki jagah direct COD order API call hogi
+      const response = await axios.post(`${API_BASE_URL}/orders/place-cod`, {
         total: subtotal,
-        ...customerDetails, // Ismein ab address, name, phone, email sab ja raha hai
+        payment_method: 'COD',
+        ...customerDetails, 
         cart: cartItems 
       });
 
-      if (response.data.success && response.data.checkout_url) {
-        window.location.href = response.data.checkout_url;
+      if (response.data.success) {
+        alert("Order Placed Successfully! Thank you for shopping.");
+        if (typeof clearCart === 'function') clearCart(); // Cart khali karne ke liye
+        setIsModalOpen(false);
+        navigate('/order-success'); // Order success page par redirect karne ke liye (Optional)
       } else {
-        alert("Checkout Error: " + (response.data.message || "Failed to initiate."));
+        alert("Order Error: " + (response.data.message || "Failed to place order."));
       }
     } catch (error: any) {
       console.error("API Connection Error:", error);
@@ -201,12 +210,12 @@ export default function Cart() {
                 </div>
                 
                 <button 
-                  onClick={() => setIsModalOpen(true)} // Modal kholne ke liye
+                  onClick={() => setIsModalOpen(true)}
                   disabled={loading || cartItems.length === 0}
                   className="w-full py-5 bg-gold text-black font-bold text-[10px] uppercase tracking-[0.3em] hover:bg-white transition-all duration-500 flex justify-center items-center gap-2 group"
                 >
                    <ShieldCheck size={16} className="group-hover:text-emerald-600 transition-colors" />
-                   Proceed to Checkout
+                   Place COD Order
                 </button>
 
                 <p className="text-[8px] text-white/20 uppercase tracking-[0.2em] text-center italic">

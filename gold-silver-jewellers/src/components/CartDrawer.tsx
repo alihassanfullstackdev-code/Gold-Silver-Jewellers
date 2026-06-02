@@ -1,7 +1,7 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { useCart } from '../context/CartContext';
-import { X, Trash2, Plus, Minus, ShoppingBag, ArrowRight, Loader2 } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { X, Trash2, Plus, Minus, ShoppingBag, ArrowRight, Loader2, Truck } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import axios from 'axios';
 
@@ -16,8 +16,9 @@ interface CartItem {
 }
 
 export default function CartDrawer({ isOpen, onClose }: { isOpen: boolean, onClose: () => void }) {
-  const { cartItems, removeFromCart, updateQuantity } = useCart();
+  const { cartItems, removeFromCart, updateQuantity, clearCart } = useCart();
   const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
   // Subtotal Calculation
@@ -26,36 +27,36 @@ export default function CartDrawer({ isOpen, onClose }: { isOpen: boolean, onClo
     return acc + (price * item.quantity);
   }, 0);
 
-  // --- ERROR-FREE CHECKOUT LOGIC ---
+  // --- CASH ON DELIVERY CHECKOUT LOGIC ---
   const handleCheckout = async () => {
     if (cartItems.length === 0) return;
 
     setLoading(true);
     try {
-      const response = await axios.post(`${API_BASE_URL}/payment/initiate`, {
+      // Ab payment initiation ki jagah direct COD order API call hogi
+      const response = await axios.post(`${API_BASE_URL}/orders/place-cod`, {
         total: subtotal,
-        email: "customer@gmail.com", // Dynamic karsaktay hain
+        payment_method: 'COD',
+        email: "customer@gmail.com", // Main cart page par ye dynamic form se jata hai
         name: "Valued Customer",
         phone: "923001234567",
+        address: "Express COD Shipping", 
         cart: cartItems
       });
 
-      // --- CRITICAL REDIRECTION CHECK ---
-      // Hum check kar rahay hain ke backend ne data.checkout_url bheja hai ya nahi
-      if (response.data && response.data.checkout_url) {
-        console.log("Redirecting to:", response.data.checkout_url);
-        window.location.assign(response.data.checkout_url); // window.location.href se zyada reliable hai redirection ke liye
+      if (response.data && response.data.success) {
+        alert("Order Placed Successfully via Cash on Delivery!");
+        if (typeof clearCart === 'function') clearCart(); // Cart khali karne ke liye
+        onClose(); // Drawer close karne ke liye
+        navigate('/order-success'); // Confirmation page redirection
       } else {
         console.error("Payload Issue:", response.data);
-        alert("Checkout Error: Backend did not return a URL.");
+        alert("Order Error: " + (response.data.message || "Failed to place order."));
       }
 
     } catch (error: any) {
       console.error("API Error:", error);
-      // Agar bSecure "Authentication Failed" deta hai to yahan message nazar aayega
-      const errorMsg = error.response?.data?.details?.message?.[0] ||
-        error.response?.data?.message ||
-        "Connection failed.";
+      const errorMsg = error.response?.data?.message || "Connection failed.";
       alert("Error: " + errorMsg);
     } finally {
       setLoading(false);
@@ -155,15 +156,18 @@ export default function CartDrawer({ isOpen, onClose }: { isOpen: boolean, onClo
                   {loading ? (
                     <>
                       <Loader2 size={18} className="animate-spin" />
-                      Processing Vault...
+                      Placing Order...
                     </>
                   ) : (
-                    "Secure Checkout"
+                    <>
+                      <Truck size={16} />
+                      Place COD Order
+                    </>
                   )}
                 </button>
 
                 <Link to="/cart" onClick={onClose} className="flex items-center justify-center gap-2 text-[9px] uppercase tracking-[0.3em] text-white/20 hover:text-gold transition-all duration-300">
-                  Expand Details <ArrowRight size={12} />
+                  Open Full Cart & Add Address <ArrowRight size={12} />
                 </Link>
               </div>
             )}
