@@ -45,7 +45,7 @@ class OrderController extends Controller
                 'customer_name'    => $validatedData['name'],
                 'customer_email'   => $validatedData['email'],
                 'customer_phone'   => $validatedData['phone'],
-                'shipping_address' => $completeAddress,
+                'customer_address' => $completeAddress,
                 'total_amount'     => $validatedData['total'],
                 'status'           => 'pending',
                 'cart_details'     => json_encode($validatedData['cart']),

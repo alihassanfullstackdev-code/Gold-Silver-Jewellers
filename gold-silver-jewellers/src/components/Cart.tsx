@@ -140,7 +140,7 @@ export default function Cart() {
                   </div>
                   <div className="flex justify-between text-[10px] uppercase tracking-widest text-white/40">
                     <span>Shipping</span>
-                    <span className="text-emerald-400">Complimentary</span>
+                    <span className="text-emerald-400">After Order Completion</span>
                   </div>
                 </div>
                 <div className="flex justify-between font-serif text-2xl">
