@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom'; // Redirection ke liye hook
 
 interface CheckoutModalProps {
   isOpen: boolean;
@@ -10,6 +11,7 @@ interface CheckoutModalProps {
 
 const CheckoutModal = ({ isOpen, onClose, total, cart }: CheckoutModalProps) => {
   const [loading, setLoading] = useState(false);
+  const navigate = useNavigate(); // Navigation initialize ki
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -24,18 +26,24 @@ const CheckoutModal = ({ isOpen, onClose, total, cart }: CheckoutModalProps) => 
     setLoading(true);
 
     try {
-      const response = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/payment/initiate`, {
+      // Ab payment gateway ke bajaye direct humari COD API par request jayegi
+      const response = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/orders/place-cod`, {
         ...formData,
         total: total,
+        payment_method: 'COD', // Backend validation ke liye explicitly pass kiya
         cart: cart
       });
 
-      if (response.data.checkout_url) {
-        window.location.href = response.data.checkout_url;
+      if (response.data.success) {
+        alert("Order Placed Successfully! Thank you for your purchase.");
+        onClose(); // Modal close karne ke liye
+        navigate('/order-success'); // Order success page par bhejney ke liye
+      } else {
+        alert("Order Error: " + (response.data.message || "Failed to place order."));
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Checkout Error:", error);
-      alert("Something went wrong. Please try again.");
+      alert(error.response?.data?.message || "Something went wrong. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -43,11 +51,16 @@ const CheckoutModal = ({ isOpen, onClose, total, cart }: CheckoutModalProps) => 
 
   return (
     <div className="fixed inset-0 z-[999] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-      <div className="w-full max-w-md border border-[#E5C787]/30 bg-[#050505] p-8 shadow-2xl">
-        <div className="mb-6 flex items-center justify-between">
+      <div className="w-full max-w-md border border-[#E5C787]/30 bg-[#050505] p-8 shadow-2xl relative">
+        <div className="mb-2 flex items-center justify-between">
           <h2 className="font-serif text-2xl tracking-widest text-[#E5C787]">SHIPPING DETAILS</h2>
           <button onClick={onClose} className="text-[#FAFAFA]/50 hover:text-[#E5C787]">✕</button>
         </div>
+        
+        {/* Method Subtitle Indicator */}
+        <p className="text-[10px] text-[#FAFAFA]/40 tracking-[0.2em] uppercase mb-6">
+          Method: <span className="text-[#E5C787] font-bold">Cash On Delivery (COD)</span>
+        </p>
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
@@ -92,7 +105,7 @@ const CheckoutModal = ({ isOpen, onClose, total, cart }: CheckoutModalProps) => 
             disabled={loading}
             className="w-full bg-[#E5C787] py-4 text-xs font-bold uppercase tracking-[0.3em] text-[#050505] transition-all hover:bg-[#FAFAFA]"
           >
-            {loading ? "PREPARING SECURE CHECKOUT..." : `CONTINUE TO PAYMENT • PKR ${total.toLocaleString()}`}
+            {loading ? "PLACING YOUR ORDER..." : `CONFIRM COD ORDER • PKR ${total.toLocaleString()}`}
           </button>
         </form>
       </div>
