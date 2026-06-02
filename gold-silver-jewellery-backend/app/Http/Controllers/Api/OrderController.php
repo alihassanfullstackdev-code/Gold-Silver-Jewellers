@@ -71,13 +71,35 @@ class OrderController extends Controller
     /**
      * Admin Dashboard Endpoint: List all records
      */
-    public function getDashboardOrders()
+    /**
+     * Admin Dashboard Endpoint: List records with pagination
+     */
+    public function getDashboardOrders(Request $request)
     {
         try {
-            $orders = DB::table('orders')->orderBy('created_at', 'desc')->get();
+            // Optional filter logic integration layer (all, pending, etc.)
+            $status = $request->query('status', 'all');
+
+            $query = DB::table('orders');
+
+            if ($status !== 'all') {
+                $query->where('status', $status);
+            }
+
+            // Standard length-aware pagination sequence (10 items per chunk execution)
+            $orders = $query->orderBy('created_at', 'desc')->paginate(10);
+
             return response()->json([
                 'success' => true,
-                'orders' => $orders
+                'orders'  => $orders->items(),
+                'pagination' => [
+                    'total'        => $orders->total(),
+                    'per_page'     => $orders->perPage(),
+                    'current_page' => $orders->currentPage(),
+                    'last_page'    => $orders->lastPage(),
+                    'from'         => $orders->firstItem(),
+                    'to'           => $orders->lastItem()
+                ]
             ], 200);
         } catch (Exception $e) {
             return response()->json(['success' => false, 'message' => 'Error fetching orders.'], 500);
