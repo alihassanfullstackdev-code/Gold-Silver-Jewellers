@@ -12,43 +12,43 @@ use Exception;
 class OrderController extends Controller
 {
     /**
-     * FRONTEND API: Cash on Delivery Order Save Karna
+     * Frontend Endpoint: Save Order coming from client app
      */
     public function placeCodOrder(Request $request)
     {
-        // 1. Validation
+        // 1. Validation for explicit incoming JSON keys
         $validatedData = $request->validate([
-            'name'    => 'required|string|max:255',
-            'email'   => 'required|email|max:255',
-            'phone'   => 'required|string|max:20',
-            'address' => 'required|string',
-            'city'    => 'required|string|max:100', // City ko hum address ke sath merge karenge
-            'total'   => 'required|numeric',
-            'cart'    => 'required|array|min:1',
+            'name'       => 'required|string|max:255',
+            'email'      => 'required|email|max:255',
+            'phone'      => 'required|string|max:20',
+            'address'    => 'required|string',
+            'city'       => 'required|string|max:100',
+            'total'      => 'required|numeric',
+            'cart'       => 'required|array|min:1',
             'orderNotes' => 'nullable|string',
         ]);
 
         try {
-            // Unique Merchant Order ID (Jaise video mein GSJ-123... tha)
+            // Unique Merchant Identity Generation
             $merchantOrderId = 'GSJ-' . strtoupper(Str::random(8));
 
-            // City aur Order Notes ko Shipping Address ke sath aik line mein merge kar dete hain
+            // Merge details accurately into database table format
             $completeAddress = $validatedData['address'] . ' , City: ' . $validatedData['city'];
-            if (!empty($request->orderNotes)) {
-                $completeAddress .= ' (Instructions: ' . $request->orderNotes . ')';
+            if (!empty($validatedData['orderNotes'])) {
+                $completeAddress .= ' (Instructions: ' . $validatedData['orderNotes'] . ')';
             }
 
-            // 2. Insert into Database (Exact matching your video columns)
-            $id = DB::table('orders')->insertGetId([
+            // 2. Query builder insertion matching exactly your migration setup
+            DB::table('orders')->insertGetId([
                 'order_id'         => $merchantOrderId,
-                'order_reference'  => 'COD-ORDER', // Manual COD identify karne ke liye
+                'order_reference'  => 'COD-ORDER',
                 'customer_name'    => $validatedData['name'],
                 'customer_email'   => $validatedData['email'],
                 'customer_phone'   => $validatedData['phone'],
                 'shipping_address' => $completeAddress,
                 'total_amount'     => $validatedData['total'],
-                'status'           => 'pending', // Default status matching migration
-                'cart_details'     => json_encode($validatedData['cart']), // Sirf products ka json array
+                'status'           => 'pending',
+                'cart_details'     => json_encode($validatedData['cart']),
                 'created_at'       => now(),
                 'updated_at'       => now(),
             ]);
@@ -69,7 +69,7 @@ class OrderController extends Controller
     }
 
     /**
-     * DASHBOARD API: Saare Orders Fetch Karna
+     * Admin Dashboard Endpoint: List all records
      */
     public function getDashboardOrders()
     {
@@ -81,6 +81,30 @@ class OrderController extends Controller
             ], 200);
         } catch (Exception $e) {
             return response()->json(['success' => false, 'message' => 'Error fetching orders.'], 500);
+        }
+    }
+
+    /**
+     * Admin Dashboard Endpoint: Update specific target status
+     */
+    public function updateOrderStatus(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'status' => 'required|string|in:pending,completed,failed,canceled'
+        ]);
+
+        try {
+            DB::table('orders')->where('id', $id)->update([
+                'status' => $validated['status'],
+                'updated_at' => now()
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Order status updated successfully.'
+            ], 200);
+        } catch (Exception $e) {
+            return response()->json(['success' => false, 'message' => 'Failed to update status.'], 500);
         }
     }
 }

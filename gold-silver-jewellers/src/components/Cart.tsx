@@ -1,9 +1,10 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { useCart } from '../context/CartContext';
-import { Trash2, Plus, Minus, ShoppingBag, Loader2, ShieldCheck, X, Truck } from 'lucide-react';
+import { Trash2, Plus, Minus, ShoppingBag, ShieldCheck } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import axios from 'axios';
+import CheckoutModal from '../components/CheckoutModal'; // Central Modal import link
 
 interface CartItem {
   id: number;
@@ -16,69 +17,11 @@ interface CartItem {
   sku?: string;
 }
 
-// --- CHECKOUT MODAL COMPONENT ---
-const CheckoutModal = ({ isOpen, onClose, onConfirm, loading, subtotal }: any) => {
-  const [details, setDetails] = useState({ name: '', email: '', phone: '', address: '' });
-
-  if (!isOpen) return null;
-
-  return (
-    <div className="fixed inset-0 z-[999] flex items-center justify-center bg-black/90 backdrop-blur-md p-4">
-      <motion.div 
-        initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
-        className="w-full max-w-md border border-gold/20 bg-[#080808] p-8 shadow-2xl relative"
-      >
-        <button onClick={onClose} className="absolute top-4 right-4 text-white/40 hover:text-gold transition-colors">
-          <X size={20} />
-        </button>
-        <h2 className="font-serif text-2xl tracking-[0.2em] text-gold mb-2 text-center uppercase">Shipping Details</h2>
-        <p className="text-[10px] text-center text-white/40 tracking-widest uppercase mb-8 flex items-center justify-center gap-1.5">
-          <Truck size={12} className="text-gold" /> Cash on Delivery (COD)
-        </p>
-        
-        <form onSubmit={(e) => { e.preventDefault(); onConfirm(details); }} className="space-y-5">
-          <input
-            type="text" placeholder="FULL NAME" required
-            className="w-full bg-transparent border-b border-white/10 py-3 text-xs tracking-widest text-white outline-none focus:border-gold transition-all"
-            onChange={(e) => setDetails({ ...details, name: e.target.value })}
-          />
-          <div className="grid grid-cols-2 gap-4">
-            <input
-              type="email" placeholder="EMAIL" required
-              className="w-full bg-transparent border-b border-white/10 py-3 text-xs tracking-widest text-white outline-none focus:border-gold transition-all"
-              onChange={(e) => setDetails({ ...details, email: e.target.value })}
-            />
-            <input
-              type="text" placeholder="PHONE" required
-              className="w-full bg-transparent border-b border-white/10 py-3 text-xs tracking-widest text-white outline-none focus:border-gold transition-all"
-              onChange={(e) => setDetails({ ...details, phone: e.target.value })}
-            />
-          </div>
-          <textarea
-            placeholder="COMPLETE SHIPPING ADDRESS" required rows={3}
-            className="w-full bg-transparent border-b border-white/10 py-3 text-xs tracking-widest text-white outline-none focus:border-gold transition-all resize-none"
-            onChange={(e) => setDetails({ ...details, address: e.target.value })}
-          />
-
-          <button
-            type="submit" disabled={loading}
-            className="w-full bg-gold py-4 text-[10px] font-bold uppercase tracking-[0.3em] text-black hover:bg-white transition-all duration-500 flex justify-center items-center gap-2"
-          >
-            {loading ? <Loader2 className="animate-spin" size={16} /> : `Confirm Order (COD) - PKR ${subtotal.toLocaleString()}`}
-          </button>
-        </form>
-      </motion.div>
-    </div>
-  );
-};
-
-// --- MAIN CART COMPONENT ---
 export default function Cart() {
-  const { cartItems, removeFromCart, updateQuantity, clearCart } = useCart(); // clearCart function agar context mein ho toh destructive actions ke liye best hai
+  const { cartItems, removeFromCart, updateQuantity, clearCart } = useCart();
   const [loading, setLoading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const navigate = useNavigate();
-  
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
   const subtotal = cartItems.reduce((acc: number, item: CartItem) => {
@@ -86,28 +29,28 @@ export default function Cart() {
     return acc + (actualPrice * item.quantity);
   }, 0);
 
-  // --- UPDATED CASH ON DELIVERY LOGIC ---
   const handleFinalCheckout = async (customerDetails: any) => {
     setLoading(true);
     try {
-      // Ab payment initiation ki jagah direct COD order API call hogi
       const response = await axios.post(`${API_BASE_URL}/orders/place-cod`, {
+        name: customerDetails.name,
+        email: customerDetails.email,
+        phone: customerDetails.phone,
+        city: customerDetails.city,
+        address: customerDetails.address,
+        orderNotes: customerDetails.orderNotes,
         total: subtotal,
-        payment_method: 'COD',
-        ...customerDetails, 
         cart: cartItems 
       });
 
       if (response.data.success) {
-        alert("Order Placed Successfully! Thank you for shopping.");
-        if (typeof clearCart === 'function') clearCart(); // Cart khali karne ke liye
+        alert(`Order Placed Successfully! ID: ${response.data.order_id}`);
+        if (typeof clearCart === 'function') clearCart();
         setIsModalOpen(false);
-        navigate('/order-success'); // Order success page par redirect karne ke liye (Optional)
-      } else {
-        alert("Order Error: " + (response.data.message || "Failed to place order."));
+        navigate('/order-success');
       }
     } catch (error: any) {
-      console.error("API Connection Error:", error);
+      console.error("Cart Checkout Error:", error);
       alert(error.response?.data?.message || "Error connecting to server.");
     } finally {
       setLoading(false);
@@ -116,14 +59,12 @@ export default function Cart() {
 
   return (
     <div className="min-h-screen bg-[#030303] text-white pt-40 pb-20 px-6 font-sans">
-      
-      {/* Checkout Modal */}
       <CheckoutModal 
         isOpen={isModalOpen} 
         onClose={() => setIsModalOpen(false)} 
         onConfirm={handleFinalCheckout}
         loading={loading}
-        subtotal={subtotal}
+        total={subtotal}
       />
 
       <div className="max-w-5xl mx-auto">
@@ -156,9 +97,7 @@ export default function Cart() {
                   >
                     <div className="w-24 h-32 md:w-32 md:h-40 bg-[#080808] border border-white/10 overflow-hidden">
                       <img 
-                        src={item.image?.startsWith('http') 
-                          ? item.image 
-                          : `${API_BASE_URL.replace('/api', '')}/storage/${item.image}`} 
+                        src={item.image?.startsWith('http') ? item.image : `${API_BASE_URL.replace('/api', '')}/storage/${item.image}`} 
                         className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-700" 
                         alt={item.name}
                       />
@@ -217,10 +156,7 @@ export default function Cart() {
                    <ShieldCheck size={16} className="group-hover:text-emerald-600 transition-colors" />
                    Place COD Order
                 </button>
-
-                <p className="text-[8px] text-white/20 uppercase tracking-[0.2em] text-center italic">
-                  Handcrafted in Pakistan.
-                </p>
+                <p className="text-[8px] text-white/20 uppercase tracking-[0.2em] text-center italic">Handcrafted in Pakistan.</p>
               </div>
             </div>
           </div>
