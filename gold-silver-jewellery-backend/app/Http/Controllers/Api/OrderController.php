@@ -74,24 +74,46 @@ class OrderController extends Controller
     /**
      * Admin Dashboard Endpoint: List records with pagination
      */
+    /**
+     * Admin Dashboard Endpoint: List records with pagination and absolute status counts
+     */
     public function getDashboardOrders(Request $request)
     {
         try {
-            // Optional filter logic integration layer (all, pending, etc.)
             $status = $request->query('status', 'all');
 
+            // 1. Fetch real-time status aggregates across the entire table mapping
+            $statusCounts = DB::table('orders')
+                ->select('status', DB::raw('count(*) as total'))
+                ->groupBy('status')
+                ->pluck('total', 'status')
+                ->toArray();
+
+            // Calculate total global entries
+            $totalGlobal = array_sum($statusCounts);
+
+            // Construct standard fallback array mapping structures
+            $compiledCounts = [
+                'all'       => $totalGlobal,
+                'pending'   => $statusCounts['pending'] ?? 0,
+                'completed' => $statusCounts['completed'] ?? 0,
+                'failed'    => $statusCounts['failed'] ?? 0,
+                'canceled'  => $statusCounts['canceled'] ?? 0,
+            ];
+
+            // 2. Build the paginated collection response stream
             $query = DB::table('orders');
 
             if ($status !== 'all') {
                 $query->where('status', $status);
             }
 
-            // Standard length-aware pagination sequence (10 items per chunk execution)
             $orders = $query->orderBy('created_at', 'desc')->paginate(10);
 
             return response()->json([
-                'success' => true,
-                'orders'  => $orders->items(),
+                'success'    => true,
+                'orders'     => $orders->items(),
+                'counts'     => $compiledCounts, // Pure datastore state aggregate counts
                 'pagination' => [
                     'total'        => $orders->total(),
                     'per_page'     => $orders->perPage(),

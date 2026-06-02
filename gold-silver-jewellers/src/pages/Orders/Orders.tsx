@@ -35,7 +35,7 @@ export default function Orders() {
   const [actionLoading, setActionLoading] = useState<number | null>(null);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [filterStatus, setFilterStatus] = useState<string>('all');
-  
+
   // Real-time pagination indicators state blocks
   const [pagination, setPagination] = useState<PaginationMeta>({
     total: 0,
@@ -58,17 +58,17 @@ export default function Orders() {
       const response = await axios.get(`${API_BASE_URL}/orders`, {
         params: { page, status }
       });
-      
+
       if (response.data.success) {
         setOrders(response.data.orders);
+
+        // Update total real-time count metrics globally across all tabs
+        if (response.data.counts) {
+          setCounts(response.data.counts);
+        }
+
         if (response.data.pagination) {
           setPagination(response.data.pagination);
-          
-          // Sync current array segmentation metadata context metrics counts locally
-          setCounts(prev => ({
-            ...prev,
-            [status]: response.data.pagination.total
-          }));
         }
       }
     } catch (error) {
@@ -108,11 +108,11 @@ export default function Orders() {
   const handleDeleteOrder = async (id: number) => {
     try {
       const response = await axios.delete(`${API_BASE_URL}/orders/${id}`);
-      
+
       if (response.data.success) {
         // Remove locally from active state array
         setOrders(prev => prev.filter(o => o.id !== id));
-        
+
         // Close sliding drawer context if the active inspection target is purged
         if (selectedOrder && selectedOrder.id === id) {
           setSelectedOrder(null);
@@ -135,14 +135,14 @@ export default function Orders() {
 
   return (
     <div className="space-y-6 max-w-[1600px] mx-auto px-1">
-      
+
       {/* Structural Module Control Headers */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/5 pb-4">
         <div>
           <h2 className="font-serif text-2xl tracking-widest uppercase text-[#E5C787]">Orders Manager</h2>
           <p className="text-[10px] text-white/40 uppercase tracking-widest mt-0.5">Track user acquisitions, checkout states, and logistics.</p>
         </div>
-        <button 
+        <button
           onClick={() => fetchOrders(pagination.current_page, filterStatus)}
           className="flex items-center gap-2 px-3 py-1.5 border border-white/10 text-[10px] tracking-widest uppercase hover:text-[#E5C787] hover:border-[#E5C787] transition-all duration-300 bg-white/5 self-start hover:bg-white/[0.08]"
         >
@@ -179,10 +179,10 @@ export default function Orders() {
               </thead>
               <tbody className="text-xs text-white/80">
                 {orders.map((order) => (
-                  <OrderRow 
-                    key={order.id} 
-                    order={order} 
-                    onInspect={() => setSelectedOrder(order)} 
+                  <OrderRow
+                    key={order.id}
+                    order={order}
+                    onInspect={() => setSelectedOrder(order)}
                     onDelete={handleDeleteOrder}
                   />
                 ))}
