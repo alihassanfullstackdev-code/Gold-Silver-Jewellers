@@ -52,4 +52,41 @@ class MetalRateController extends Controller
         $rate->delete();
         return response()->json(['message' => 'Record deleted successfully']);
     }
+
+    /**
+     * Frontend Public Endpoint: Fetch the single absolute latest pricing configuration
+     * Route: GET /api/live-rates/active
+     */
+    public function getLatestRates()
+    {
+        try {
+            // Database se sabse latest record uthayen
+            $latestRate = MetalRate::latest()->first();
+
+            if (!$latestRate) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No rates found in the datastore layer.'
+                ], 404);
+            }
+
+            return response()->json([
+                'success' => true,
+                'rates' => [
+                    'gold_24k'     => (float) $latestRate->gold_24k,
+                    'gold_22k'     => (float) $latestRate->gold_22k,
+                    'gold_21k'     => (float) $latestRate->gold_21k,
+                    'gold_18k'     => (float) $latestRate->gold_18k,
+                    'silver'       => (float) $latestRate->silver,
+                    'platinum'     => (float) $latestRate->platinum,
+                    'last_updated' => $latestRate->created_at->toIso8601String()
+                ]
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Server error while compiling metadata context framework.'
+            ], 500);
+        }
+    }
 }

@@ -19,6 +19,7 @@ import Footer from './components/Footer';
 import CartDrawer from './components/CartDrawer';
 import { Home, Collections, Services, AboutUs, ContactUs, Login, AdminDashboard } from './pages';
 import LiveRates from './pages/LiveRates/LiveRates';
+import RatesTicker from './components/RatesTicker';
 import Categories from './pages/Categories/Categories';
 import Products from './pages/Products/Products';
 import Orders from './pages/Orders/Orders';
@@ -89,6 +90,9 @@ function MainApp() {
       <CartDrawer isOpen={isDrawerOpen} onClose={() => setIsDrawerOpen(false)} />
 
       <div className={isLoading ? 'invisible' : 'visible'}>
+        {/* INJECTED: Ticker loads on user viewport only when dashboard admin panel layout state is unmapped */}
+        {!isAdminPage && <RatesTicker />}
+
         {!isAdminPage && <Navbar />}
 
         <AnimatePresence mode="wait">
@@ -102,8 +106,8 @@ function MainApp() {
             <Route path="/login" element={<Login />} />
 
             {/* --- bSecure Redirection Routes --- */}
-            <Route path="/order-success" element={<OrderSuccess />} />
-            <Route path="/order-failed" element={<OrderFailed />} />
+            {/* <Route path="/order-success" element={<OrderSuccess />} />
+            <Route path="/order-failed" element={<OrderFailed />} /> */}
 
             {/* Admin Protected Routes */}
             <Route path="/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>}>

@@ -25,6 +25,7 @@ Route::post('/login', [AuthController::class, 'login']);
 
 // Business/Catalog Resources
 Route::apiResource('rates', MetalRateController::class)->only(['index', 'store', 'destroy']);
+Route::get('/live-rates/active', [MetalRateController::class, 'getLatestRates']);
 Route::apiResource('categories', CategoryController::class);
 Route::apiResource('products', ProductController::class);
 
