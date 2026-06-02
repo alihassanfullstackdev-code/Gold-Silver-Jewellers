@@ -21,6 +21,8 @@ import { Home, Collections, Services, AboutUs, ContactUs, Login, AdminDashboard 
 import LiveRates from './pages/LiveRates/LiveRates';
 import Categories from './pages/Categories/Categories';
 import Products from './pages/Products/Products';
+import Orders from './pages/Orders/Orders';
+
 import CartPage from './components/Cart';
 
 // --- NEW REDIRECTION COMPONENTS ---
@@ -108,6 +110,7 @@ function MainApp() {
               <Route path="rates" element={<LiveRates />} />
               <Route path="categories" element={<Categories />} />
               <Route path="products" element={<Products />} />
+              <Route path="orders" element={<Orders />} />
             </Route>
           </Routes>
         </AnimatePresence>
